@@ -4,6 +4,7 @@
     "description": "Extension for Spicetify to display the AOTY user score of an album/single on Spotify.",
     "preview": "assets/example.png",
     "main": "aoty.js",
-    "readme": "README.md"
+    "readme": "README.md",
+    "tags": ["aoty", "score", "albumoftheyear"]
   }
 ]
