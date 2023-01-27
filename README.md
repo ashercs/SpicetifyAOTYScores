@@ -1,6 +1,6 @@
 # AlbumOfTheYear Score Spotify extension
 
-Extension for [Spicetify](https://github.com/spicetify/spicetify-cli) to display the AOTY user score of an album/single on spotify.
+Extension for [Spicetify](https://github.com/spicetify/spicetify-cli) to display the AOTY user score of an album/single on Spotify.
 
 <p align="center">
   <img alt="preview" src="./assets/example.png">
