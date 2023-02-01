@@ -1,5 +1,5 @@
 import cheerio from "cheerio";
-const { Player, Platform, Menu, LocalStorage } = Spicetify;
+const {Player} = Spicetify;
 let prevTrack: string;
 let prevRequest: number;
 const RATE_LIMIT = 10 * 1000;
@@ -84,7 +84,7 @@ async function update() {
   );
   if (!infoContainer) return;
   clearRating();
-  if (document.getElementsByClassName("ellipsis-one-line").length > 1) {
+  if (document.getElementsByClassName("scoreElement").length > 1) {
     clearRating
   }
   let { title, album_title, artist_name } = Player.data.track.metadata;
@@ -101,7 +101,7 @@ async function update() {
     let thing = artist_name + " " + album_title;
     const rating = await getPageLink(thing);
     ratingContainer = document.createElement("a");
-    ratingContainer.className = "ellipsis-one-line";
+    ratingContainer.className = "scoreElement";
     if (rating[0] >= 69.5) {
       ratingContainer.style.color = "#85ce73";
     }
