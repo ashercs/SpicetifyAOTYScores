@@ -13149,7 +13149,7 @@ var testinggg = (() => {
     if (document.getElementsByClassName("ellipsis-one-line").length > 1) {
       clearRating;
     }
-    const { title, album_title, artist_name } = Player.data.track.metadata;
+    let { title, album_title, artist_name } = Player.data.track.metadata;
     if (!title || !album_title || !artist_name)
       return;
     const now = Date.now();
@@ -13157,9 +13157,10 @@ var testinggg = (() => {
       return;
     prevTrack = id;
     try {
-      let album_title2 = album_title;
-      console.log(album_title2);
-      let thing = artist_name + " " + album_title2;
+      album_title = album_title.split(" -")[0];
+      album_title = album_title.split(" (")[0];
+      console.log(album_title);
+      let thing = artist_name + " " + album_title;
       const rating = await getPageLink(thing);
       ratingContainer = document.createElement("a");
       ratingContainer.className = "ellipsis-one-line";
