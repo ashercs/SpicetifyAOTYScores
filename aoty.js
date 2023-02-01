@@ -13068,7 +13068,7 @@ var testinggg = (() => {
   var { root: root2 } = static_exports;
 
   // src/app.tsx
-  var { Player, Platform, Menu, LocalStorage } = Spicetify;
+  var { Player } = Spicetify;
   var prevTrack;
   var prevRequest;
   var RATE_LIMIT = 10 * 1e3;
@@ -13146,7 +13146,7 @@ var testinggg = (() => {
     if (!infoContainer)
       return;
     clearRating();
-    if (document.getElementsByClassName("ellipsis-one-line").length > 1) {
+    if (document.getElementsByClassName("scoreElement").length > 1) {
       clearRating;
     }
     let { title, album_title, artist_name } = Player.data.track.metadata;
@@ -13163,7 +13163,7 @@ var testinggg = (() => {
       let thing = artist_name + " " + album_title;
       const rating = await getPageLink(thing);
       ratingContainer = document.createElement("a");
-      ratingContainer.className = "ellipsis-one-line";
+      ratingContainer.className = "scoreElement";
       if (rating[0] >= 69.5) {
         ratingContainer.style.color = "#85ce73";
       }
