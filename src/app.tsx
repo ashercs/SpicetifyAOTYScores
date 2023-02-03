@@ -1,15 +1,19 @@
 import cheerio from "cheerio";
-const {Player} = Spicetify;
+const {Player, URI} = Spicetify;
 let prevTrack: string;
 let prevRequest: number;
-const RATE_LIMIT = 10 * 1000;
+const RATE_LIMIT = 10 * 5000;
 
 let ratingContainer: HTMLAnchorElement;
+let trackContainer: HTMLAnchorElement | null;
 let infoContainer: HTMLElement | null;
 function clearRating() {
   if (infoContainer && ratingContainer) {
     try {
-      infoContainer.removeChild(ratingContainer);
+        infoContainer.removeChild(ratingContainer);
+          for (let i = 0; i < document.getElementsByClassName('scoreElement').length; i++) {
+            document.getElementsByClassName('scoreElement')[i].remove()
+          }
     } catch (e) { }
   }
 }
@@ -64,6 +68,13 @@ async function getPageLink(song: string) {
   let ratingcount = $(
     "#centerContent > div.fullWidth > div:nth-child(4) > div.albumUserScoreBox > div.text.numReviews > a > strong"
   ).text()!;
+  let test = $('#tracklist > div.trackList > table > tbody').children().length
+  console.log(test)
+  if (test <= 0) {
+  for (let i = 1; i < test; i++){
+    console.log($(`#tracklist > div.trackList > table > tbody > tr:nth-child(${i}) > td.trackRating > span`).text(), i)
+  }
+}
   let ratingcountint = ratingcount.replace(",", "");
   let score = $(
     "#centerContent > div.fullWidth > div:nth-child(4) > div.albumUserScoreBox > div.albumUserScore > a"
@@ -82,17 +93,18 @@ async function update() {
   infoContainer = document.querySelector(
     "#main > div > div.Root__top-container.Root__top-container--right-sidebar-visible > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-trackInfo-container"
   );
+
   if (!infoContainer) return;
   clearRating();
   if (document.getElementsByClassName("scoreElement").length > 1) {
     clearRating
   }
   let { title, album_title, artist_name } = Player.data.track.metadata;
+  console.log(Player.data.track.metadata)
   if (!title || !album_title || !artist_name) return;
   const now = Date.now();
   if (prevRequest && now - prevRequest < RATE_LIMIT) return;
   prevTrack = id;
-
   try {
     album_title = album_title.split(' -')[0];
     album_title = album_title.split(' (')[0];
@@ -100,6 +112,11 @@ async function update() {
     console.log(album_title)
     let thing = artist_name + " " + album_title;
     const rating = await getPageLink(thing);
+    if (document.getElementsByClassName('scoreElement').length >= 1) {
+      for (let i = 0; i < document.getElementsByClassName('scoreElement').length; i++) {
+        document.getElementsByClassName('scoreElement')[i].remove()
+      }
+    }
     ratingContainer = document.createElement("a");
     ratingContainer.className = "scoreElement";
     if (rating[0] >= 69.5) {
@@ -122,6 +139,7 @@ async function update() {
     ratingContainer.style.fontSize = "11px";
     ratingContainer.style.fontWeight = 'bold'
     infoContainer.appendChild(ratingContainer);
+    //album_track_number, album_disc_number
   } catch (e: any) {
     if (e instanceof ApiError) {
       console.log("Failed to get AOTY rating:", e.message);
