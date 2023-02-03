@@ -13068,16 +13068,19 @@ var testinggg = (() => {
   var { root: root2 } = static_exports;
 
   // src/app.tsx
-  var { Player } = Spicetify;
+  var { Player, URI } = Spicetify;
   var prevTrack;
   var prevRequest;
-  var RATE_LIMIT = 10 * 1e3;
+  var RATE_LIMIT = 10 * 5e3;
   var ratingContainer;
   var infoContainer;
   function clearRating() {
     if (infoContainer && ratingContainer) {
       try {
         infoContainer.removeChild(ratingContainer);
+        for (let i = 0; i < document.getElementsByClassName("scoreElement").length; i++) {
+          document.getElementsByClassName("scoreElement")[i].remove();
+        }
       } catch (e) {
       }
     }
@@ -13123,6 +13126,13 @@ var testinggg = (() => {
     let ratingcount = $2(
       "#centerContent > div.fullWidth > div:nth-child(4) > div.albumUserScoreBox > div.text.numReviews > a > strong"
     ).text();
+    let test = $2("#tracklist > div.trackList > table > tbody").children().length;
+    console.log(test);
+    if (test <= 0) {
+      for (let i = 1; i < test; i++) {
+        console.log($2(`#tracklist > div.trackList > table > tbody > tr:nth-child(${i}) > td.trackRating > span`).text(), i);
+      }
+    }
     let ratingcountint = ratingcount.replace(",", "");
     let score = $2(
       "#centerContent > div.fullWidth > div:nth-child(4) > div.albumUserScoreBox > div.albumUserScore > a"
@@ -13150,6 +13160,7 @@ var testinggg = (() => {
       clearRating;
     }
     let { title, album_title, artist_name } = Player.data.track.metadata;
+    console.log(Player.data.track.metadata);
     if (!title || !album_title || !artist_name)
       return;
     const now = Date.now();
@@ -13162,6 +13173,11 @@ var testinggg = (() => {
       console.log(album_title);
       let thing = artist_name + " " + album_title;
       const rating = await getPageLink(thing);
+      if (document.getElementsByClassName("scoreElement").length >= 1) {
+        for (let i = 0; i < document.getElementsByClassName("scoreElement").length; i++) {
+          document.getElementsByClassName("scoreElement")[i].remove();
+        }
+      }
       ratingContainer = document.createElement("a");
       ratingContainer.className = "scoreElement";
       if (rating[0] >= 69.5) {
