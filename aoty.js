@@ -13138,7 +13138,9 @@ var aoty = (() => {
     let ratingcount = $2(
       "#centerContent > div.fullWidth > div:nth-child(4) > div.albumUserScoreBox > div.text.numReviews > a > strong"
     ).text();
-    let checkIfTrackRatings = $2("#tracklist > div.trackList > table > tbody > tr:nth-child(1) > td.trackRating > span").text();
+    let checkIfTrackRatings = $2(
+      "#tracklist > div.trackList > table > tbody > tr:nth-child(1) > td.trackRating > span"
+    ).text();
     let tracklist = $2("#tracklist > div.trackList > table > tbody");
     let tracks = tracklist.children();
     let trackCount = tracks.length;
@@ -13155,22 +13157,34 @@ var aoty = (() => {
         let trackratingbydisc = "";
         let trackurlbydisc = "";
         let trackratingcountbydisc = "";
-        let ratingElement = $2(`#tracklist > div.trackList > table > tbody > tr:nth-child(${i}) > td.trackRating > span`);
-        let urlElement = $2(`#tracklist > div.trackList > table > tbody > tr:nth-child(${i}) > td.trackTitle > a`);
+        let ratingElement = $2(
+          `#tracklist > div.trackList > table > tbody > tr:nth-child(${i}) > td.trackRating > span`
+        );
+        let urlElement = $2(
+          `#tracklist > div.trackList > table > tbody > tr:nth-child(${i}) > td.trackTitle > a`
+        );
         for (let h = 0; h < ratingElement.length; h++) {
-          let trackratingbydisc1 = $2(ratingElement[h]);
-          trackratingbydisc += trackratingbydisc1.text();
-          let trackurlbydisc1 = $2(urlElement[h]);
-          trackurlbydisc += trackurlbydisc1.attr("href");
-          trackratingcountbydisc += trackratingbydisc1.attr("title");
+          if (i != trackCount) {
+            let trbd1 = $2(ratingElement[h]);
+            trackratingbydisc += trbd1.text();
+            let tubd1 = $2(urlElement[h]);
+            trackurlbydisc += tubd1.attr("href");
+            trackratingcountbydisc += trbd1.attr("title");
+          }
         }
         songRatingsJSON += `"${i}": "` + trackratingbydisc + '",\n';
         songUrlJSON += `"${i}": "` + trackurlbydisc + '",\n';
         songRatingCountJSON += `"${i}": "` + trackratingcountbydisc + '",\n';
       }
-      songRatingsJSON += `"${trackCount}": "` + $2(`#tracklist > div.trackList > table > tbody > tr:nth-child(${trackCount}) > td.trackRating > span`).text() + '"\n}';
-      songUrlJSON += `"${trackCount}": "` + $2(`#tracklist > div.trackList > table > tbody > tr:nth-child(${trackCount}) > td.trackTitle`).attr("href") + '"\n}';
-      songRatingCountJSON += `"${trackCount}": "` + $2(`#tracklist > div.trackList > table > tbody > tr:nth-child(${trackCount}) > td.trackRating > span`).attr("title") + '"\n}';
+      songRatingsJSON += `"${trackCount}": "` + $2(
+        `#tracklist > div.trackList > table > tbody > tr:nth-child(${trackCount}) > td.trackRating > span`
+      ).text() + '"\n}';
+      songUrlJSON += `"${trackCount}": "` + $2(
+        `#tracklist > div.trackList > table > tbody > tr:nth-child(${trackCount}) > td.trackTitle`
+      ).attr("href") + '"\n}';
+      songRatingCountJSON += `"${trackCount}": "` + $2(
+        `#tracklist > div.trackList > table > tbody > tr:nth-child(${trackCount}) > td.trackRating > span`
+      ).attr("title") + '"\n}';
       JSONSongUrls = JSON.parse(songUrlJSON);
       JSONTrackRatings = JSON.parse(songRatingsJSON);
       JSONRatingCount = JSON.parse(songRatingCountJSON);
@@ -13182,7 +13196,16 @@ var aoty = (() => {
     let intscore = parseFloat(score);
     let finalintscore = intscore.toFixed(2);
     let roundedscore = parseFloat(finalintscore);
-    return [roundedscore, ratingcount, aotyUrl, ratingcountint, JSONTrackRatings, hasRatings, JSONSongUrls, JSONRatingCount];
+    return [
+      roundedscore,
+      ratingcount,
+      aotyUrl,
+      ratingcountint,
+      JSONTrackRatings,
+      hasRatings,
+      JSONSongUrls,
+      JSONRatingCount
+    ];
   }
   async function update2() {
     var _a2, _b, _c;
@@ -13203,7 +13226,13 @@ var aoty = (() => {
     if (document.getElementsByClassName("songScore").length > 1) {
       clearRating;
     }
-    let { title, album_title, artist_name, album_track_number, album_disc_count, album_disc_number } = Player.data.track.metadata;
+    let {
+      title,
+      album_title,
+      artist_name,
+      album_track_number,
+      album_disc_number
+    } = Player.data.track.metadata;
     if (!title || !album_title || !artist_name)
       return;
     const now = Date.now();
@@ -13213,32 +13242,37 @@ var aoty = (() => {
     try {
       album_title = album_title.split(" -")[0];
       album_title = album_title.split(" (")[0];
-      let thing = artist_name + " " + album_title;
-      const rating = await getPageLink(thing);
+      let searchquery = artist_name + " " + album_title;
+      const rating = await getPageLink(searchquery);
       if (document.getElementsByClassName("scoreElement").length >= 1) {
         for (let i = 0; i < document.getElementsByClassName("scoreElement").length; i++) {
           document.getElementsByClassName("scoreElement")[i].remove();
         }
       }
       if (rating[5] === "True") {
-        songTitleBox = document.querySelector("#main > div > div.Root__top-container.Root__top-container--right-sidebar-visible > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-trackInfo-container > div.main-trackInfo-name > div > div > div > div > span");
+        songTitleBox = document.querySelector(
+          "#main > div > div.Root__top-container.Root__top-container--right-sidebar-visible > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-trackInfo-container > div.main-trackInfo-name > div > div > div > div > span"
+        );
         if (songTitleBox) {
           songRating = document.createElement("a");
-          let songscorefirst = rating[4][Number(album_track_number)];
-          let songscoresecond = (_c = songscorefirst.match(/.{1,2}/g)) != null ? _c : [];
-          let songScore = songscoresecond[Number(album_disc_number) - 1];
+          let songScoreList = (_c = rating[4][Number(album_track_number)].match(/.{1,2}/g)) != null ? _c : [];
+          let songScore = songScoreList[Number(album_disc_number) - 1];
           songRating.className = "songScore";
           if (songScore >= 69.5) {
             songRating.style.color = "#85ce73";
           }
-          if (songScore >= 49.5 && rating[0] < 69.5) {
+          if (songScore >= 49.5 && songScore < 69.5) {
             songRating.style.color = "#f0e68c";
           }
           if (songScore < 49.5) {
             songRating.style.color = "#d76666";
           }
-          songRating.innerText = `       [${songScore}]`;
-          let partUrl = String(rating[6][Number(album_track_number)]).split("/song");
+          if (songScore != "undefined") {
+            songRating.innerText = `    [${songScore}]`;
+          }
+          let partUrl = String(rating[6][Number(album_track_number)]).split(
+            "/song"
+          );
           songRating.href = "https://www.albumoftheyear.org/song" + partUrl[Number(album_disc_number)];
           songRating.style.fontSize = "10px";
           songRating.style.fontWeight = "bold";
