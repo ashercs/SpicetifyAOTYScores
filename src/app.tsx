@@ -4,6 +4,7 @@ import cheerio from "cheerio";
 const { Player } = Spicetify;
 let prevTrack: string;
 let prevRequest: number;
+
 // Rate limit is unknown so just an estimate.
 const RATE_LIMIT = 10 * 5000;
 
