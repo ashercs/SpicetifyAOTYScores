@@ -83,8 +83,6 @@ async function getPageLink(song: string) {
   let tracklist = $('#tracklist > div.trackList > table > tbody')
   let tracks = tracklist.children()
   let trackCount = tracks.length
-  console.log(trackCount)
-  let trackCount2 = trackCount - 1
   let hasRatings = 'False'
   let JSONSongUrls = ''
   let JSONTrackRatings = ''
@@ -101,27 +99,25 @@ async function getPageLink(song: string) {
       let ratingElement = $(`#tracklist > div.trackList > table > tbody > tr:nth-child(${i}) > td.trackRating > span`)
       let urlElement = $(`#tracklist > div.trackList > table > tbody > tr:nth-child(${i}) > td.trackTitle > a`)
       for (let h = 0; h < ratingElement.length; h++){
-        //if (i != trackCount) {
+        if (i != trackCount) {
         let trackratingbydisc1 = $(ratingElement[h])
         trackratingbydisc += trackratingbydisc1.text()
         let trackurlbydisc1 = $(urlElement[h])
         trackurlbydisc += trackurlbydisc1.attr("href")
         trackratingcountbydisc += trackratingbydisc1.attr("title")
+        }
       }
       songRatingsJSON += `"${i}": "` + trackratingbydisc + '",\n'
       songUrlJSON += `"${i}": "` + trackurlbydisc + '",\n'
       songRatingCountJSON += `"${i}": "` + trackratingcountbydisc + '",\n'
-      console.log(trackratingbydisc)
   }
   // let discNumber = ratingElement.length
   songRatingsJSON += `"${trackCount}": "` + $(`#tracklist > div.trackList > table > tbody > tr:nth-child(${trackCount}) > td.trackRating > span`).text() + '"\n}'
   songUrlJSON += `"${trackCount}": "` + $(`#tracklist > div.trackList > table > tbody > tr:nth-child(${trackCount}) > td.trackTitle`).attr('href') + '"\n}'
   songRatingCountJSON += `"${trackCount}": "` + $(`#tracklist > div.trackList > table > tbody > tr:nth-child(${trackCount}) > td.trackRating > span`).attr('title') + '"\n}'
-  console.log(songRatingsJSON)
   JSONSongUrls = JSON.parse(songUrlJSON)
   JSONTrackRatings = JSON.parse(songRatingsJSON)
   JSONRatingCount = JSON.parse(songRatingCountJSON)
-  console.log(songRatingCountJSON)
 }
   let ratingcountint = ratingcount.replace(",", "");
   let score = $(
@@ -148,7 +144,7 @@ async function update() {
   if (document.getElementsByClassName("songScore").length > 1) {
     clearRating
   }
-  let { title, album_title, artist_name, album_track_number, album_disc_count, album_disc_number } = Player.data.track.metadata;
+  let { title, album_title, artist_name, album_track_number, album_disc_number } = Player.data.track.metadata;
   if (!title || !album_title || !artist_name) return;
   const now = Date.now();
   if (prevRequest && now - prevRequest < RATE_LIMIT) return;
@@ -157,16 +153,12 @@ async function update() {
     album_title = album_title.split(' -')[0];
     album_title = album_title.split(' (')[0];
     let thing = artist_name + " " + album_title;
-    console.log(thing)
     const rating: any = await getPageLink(thing);
     if (document.getElementsByClassName('scoreElement').length >= 1) {
       for (let i = 0; i < document.getElementsByClassName('scoreElement').length; i++) {
         document.getElementsByClassName('scoreElement')[i].remove()
       }
     }
-    console.log(Player.data?.track?.metadata)
-    console.log(rating[4])
-    console.log(rating[6])
     if (rating[5] === "True"){
     songTitleBox = document.querySelector('#main > div > div.Root__top-container.Root__top-container--right-sidebar-visible > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-trackInfo-container > div.main-trackInfo-name > div > div > div > div > span')
     if (songTitleBox){
@@ -185,14 +177,11 @@ async function update() {
         songRating.style.color = "#d76666";
       }
       songRating.innerText = `       [${songScore}]`
-      console.log(rating[7])
-      console.log(rating[7][Number(album_track_number)])
       let partUrl = String(rating[6][Number(album_track_number)]).split("/song")
       songRating.href = "https://www.albumoftheyear.org/song" + partUrl[Number(album_disc_number)];
       songRating.style.fontSize = "10px";
       songRating.style.fontWeight = 'bold'
       let partTitle = rating[7][Number(album_track_number)].split("Ratings")
-      console.log(partTitle)
       songRating.title = partTitle[Number(album_disc_number) - 1] + " Ratings"
 
       songTitleBox.appendChild(songRating)
