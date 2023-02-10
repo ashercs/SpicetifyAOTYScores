@@ -99,13 +99,12 @@ async function getPageLink(song: string) {
       let ratingElement = $(`#tracklist > div.trackList > table > tbody > tr:nth-child(${i}) > td.trackRating > span`)
       let urlElement = $(`#tracklist > div.trackList > table > tbody > tr:nth-child(${i}) > td.trackTitle > a`)
       for (let h = 0; h < ratingElement.length; h++){
-        if (i != trackCount) {
+        //if (i != trackCount) {
         let trackratingbydisc1 = $(ratingElement[h])
         trackratingbydisc += trackratingbydisc1.text()
         let trackurlbydisc1 = $(urlElement[h])
         trackurlbydisc += trackurlbydisc1.attr("href")
         trackratingcountbydisc += trackratingbydisc1.attr("title")
-        }
       }
       songRatingsJSON += `"${i}": "` + trackratingbydisc + '",\n'
       songUrlJSON += `"${i}": "` + trackurlbydisc + '",\n'
@@ -144,7 +143,7 @@ async function update() {
   if (document.getElementsByClassName("songScore").length > 1) {
     clearRating
   }
-  let { title, album_title, artist_name, album_track_number, album_disc_number } = Player.data.track.metadata;
+  let { title, album_title, artist_name, album_track_number, album_disc_count, album_disc_number } = Player.data.track.metadata;
   if (!title || !album_title || !artist_name) return;
   const now = Date.now();
   if (prevRequest && now - prevRequest < RATE_LIMIT) return;
@@ -182,7 +181,7 @@ async function update() {
       songRating.style.fontSize = "10px";
       songRating.style.fontWeight = 'bold'
       let partTitle = rating[7][Number(album_track_number)].split("Ratings")
-      songRating.title = partTitle[Number(album_disc_number) - 1] + " Ratings"
+      songRating.title = partTitle[Number(album_disc_number) - 1] + "Ratings"
 
       songTitleBox.appendChild(songRating)
     }
