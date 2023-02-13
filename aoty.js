@@ -13215,9 +13215,20 @@ var aoty = (() => {
     const id = Player.data.playback_id;
     if (id == prevTrack)
       return;
-    infoContainer = document.querySelector(
+    if (document.querySelector(
       "#main > div > div.Root__top-container.Root__top-container--right-sidebar-visible > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-trackInfo-container"
-    );
+    )) {
+      infoContainer = document.querySelector(
+        "#main > div > div.Root__top-container.Root__top-container--right-sidebar-visible > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-trackInfo-container"
+      );
+    }
+    if (document.querySelector(
+      "#main > div > div.Root__top-container > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-trackInfo-container"
+    )) {
+      infoContainer = document.querySelector(
+        "#main > div > div.Root__top-container > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-trackInfo-container"
+      );
+    }
     if (!infoContainer)
       return;
     clearRating();
@@ -13251,9 +13262,20 @@ var aoty = (() => {
         }
       }
       if (rating[5] === "True") {
-        songTitleBox = document.querySelector(
+        if (document.querySelector(
           "#main > div > div.Root__top-container.Root__top-container--right-sidebar-visible > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-trackInfo-container > div.main-trackInfo-name > div > div > div > div > span"
-        );
+        )) {
+          songTitleBox = document.querySelector(
+            "#main > div > div.Root__top-container.Root__top-container--right-sidebar-visible > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-trackInfo-container > div.main-trackInfo-name > div > div > div > div > span"
+          );
+        }
+        if (document.querySelector(
+          "#main > div > div.Root__top-container > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-trackInfo-container > div.main-trackInfo-name > div > div > div > div > span"
+        )) {
+          songTitleBox = document.querySelector(
+            "#main > div > div.Root__top-container > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-trackInfo-container > div.main-trackInfo-name > div > div > div > div > span"
+          );
+        }
         if (songTitleBox) {
           songRating = document.createElement("a");
           let songScoreList = (_c = rating[4][Number(album_track_number)].match(/.{1,2}/g)) != null ? _c : [];
