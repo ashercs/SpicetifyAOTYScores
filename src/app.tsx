@@ -4,7 +4,6 @@ import cheerio from "cheerio";
 const { Player } = Spicetify;
 let prevTrack: string;
 let prevRequest: number;
-
 // Rate limit is unknown so just an estimate.
 const RATE_LIMIT = 10 * 5000;
 
@@ -13,6 +12,7 @@ let ratingContainer: HTMLAnchorElement;
 let songRating: HTMLAnchorElement;
 let songTitleBox: HTMLAnchorElement | null;
 let infoContainer: HTMLElement | null;
+let infoContainer2: HTMLElement | null;
 
 // Clearing the displayed ratings.
 function clearRating() {
@@ -54,8 +54,8 @@ export async function fetch(url: string) {
         method: "GET",
         uri: url,
         headers: {
-          "user-agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246",
+          "user-agent": "Test",
+          "User-Agent": "Testing",
         },
       });
 
@@ -136,12 +136,11 @@ async function getPageLink(song: string) {
     hasRatings = "True";
     // This will loop for the amount of tracks in the tracklist.
     for (let i = 1; i < trackCount; i++) {
-
       // Quick fix for bug with albums with multiple discs.
       let trackratingbydisc = "";
       let trackurlbydisc = "";
       let trackratingcountbydisc = "";
-      
+
       // Element with the track ratings
       let ratingElement = $(
         `#tracklist > div.trackList > table > tbody > tr:nth-child(${i}) > td.trackRating > span`
@@ -154,14 +153,13 @@ async function getPageLink(song: string) {
 
       // Another part of the fix for bug with albums with multiple discs
       for (let h = 0; h < ratingElement.length; h++) {
-
         // Making sure the last one does not have a comma and ends with a }
         if (i != trackCount) {
-        let trbd1 = $(ratingElement[h]);
-        trackratingbydisc += trbd1.text();
-        let tubd1 = $(urlElement[h]);
-        trackurlbydisc += tubd1.attr("href");
-        trackratingcountbydisc += trbd1.attr("title");
+          let trbd1 = $(ratingElement[h]);
+          trackratingbydisc += trbd1.text();
+          let tubd1 = $(urlElement[h]);
+          trackurlbydisc += tubd1.attr("href");
+          trackratingcountbydisc += trbd1.attr("title");
         }
       }
       songRatingsJSON += `"${i}": "` + trackratingbydisc + '",\n';
@@ -226,11 +224,26 @@ async function update() {
   // Check to see if you are replaying the same track.
   const id = Player.data.playback_id;
   if (id == prevTrack) return;
-
   // Check #2 if there is a track playing, infoContainer is also used later to add the album rating text.
-  infoContainer = document.querySelector(
-    "#main > div > div.Root__top-container.Root__top-container--right-sidebar-visible > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-trackInfo-container"
-  );
+  // Also fix for extension not working if friends tab is closed.
+  if (
+    document.querySelector(
+      "#main > div > div.Root__top-container.Root__top-container--right-sidebar-visible > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-trackInfo-container"
+    )
+  ) {
+    infoContainer = document.querySelector(
+      "#main > div > div.Root__top-container.Root__top-container--right-sidebar-visible > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-trackInfo-container"
+    );
+  }
+  if (
+    document.querySelector(
+      "#main > div > div.Root__top-container > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-trackInfo-container"
+    )
+  ) {
+    infoContainer = document.querySelector(
+      "#main > div > div.Root__top-container > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-trackInfo-container"
+    );
+  }
   if (!infoContainer) return;
   clearRating();
 
@@ -262,7 +275,6 @@ async function update() {
   prevTrack = id;
 
   try {
-
     // Removing any deluxes or remasters from album titles.
     album_title = album_title.split(" -")[0];
     album_title = album_title.split(" (")[0];
@@ -288,17 +300,30 @@ async function update() {
     // rating[5] is the "hasRatings", it checks if this is True before adding track ratings.
     // This is so it does not just say "undefined" on tracks that do not have it.
     if (rating[5] === "True") {
-
       // Song title box element so the track rating can be added to it.
       // There is currently an issue where if a track title is too long it won't show.
       // Working on a fix, I will not put the score before the track title since it looks weird.
-      songTitleBox = document.querySelector(
-        "#main > div > div.Root__top-container.Root__top-container--right-sidebar-visible > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-trackInfo-container > div.main-trackInfo-name > div > div > div > div > span"
-      );
-
+      // Also fix #2 for glitch causing extension to not work with friends tab open.
+      if (
+        document.querySelector(
+          "#main > div > div.Root__top-container.Root__top-container--right-sidebar-visible > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-trackInfo-container > div.main-trackInfo-name > div > div > div > div > span"
+        )
+      ) {
+        songTitleBox = document.querySelector(
+          "#main > div > div.Root__top-container.Root__top-container--right-sidebar-visible > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-trackInfo-container > div.main-trackInfo-name > div > div > div > div > span"
+        );
+      }
+      if (
+        document.querySelector(
+          "#main > div > div.Root__top-container > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-trackInfo-container > div.main-trackInfo-name > div > div > div > div > span"
+        )
+      ) {
+        songTitleBox = document.querySelector(
+          "#main > div > div.Root__top-container > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-trackInfo-container > div.main-trackInfo-name > div > div > div > div > span"
+        );
+      }
       // If the song has a title.
       if (songTitleBox) {
-
         // Creating the element that will be added.
         songRating = document.createElement("a");
 
@@ -348,7 +373,7 @@ async function update() {
         // Adding hover text that displays the amount of users that have rated the track.
         let partTitle = rating[7][Number(album_track_number)].split("Ratings");
         songRating.title = partTitle[Number(album_disc_number) - 1] + "Ratings";
-        
+
         // Adding this element to the same area the track title is.
         songTitleBox.appendChild(songRating);
       }
