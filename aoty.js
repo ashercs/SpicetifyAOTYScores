@@ -13181,7 +13181,7 @@ var aoty = (() => {
         `#tracklist > div.trackList > table > tbody > tr:nth-child(${trackCount}) > td.trackRating > span`
       ).text() + '"\n}';
       songUrlJSON += `"${trackCount}": "` + $2(
-        `#tracklist > div.trackList > table > tbody > tr:nth-child(${trackCount}) > td.trackTitle`
+        `#tracklist > div.trackList > table > tbody > tr:nth-child(${trackCount}) > td.trackTitle > a`
       ).attr("href") + '"\n}';
       songRatingCountJSON += `"${trackCount}": "` + $2(
         `#tracklist > div.trackList > table > tbody > tr:nth-child(${trackCount}) > td.trackRating > span`
