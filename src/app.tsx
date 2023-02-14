@@ -145,12 +145,10 @@ async function getPageLink(song: string) {
       let ratingElement = $(
         `#tracklist > div.trackList > table > tbody > tr:nth-child(${i}) > td.trackRating > span`
       );
-
       // Url to the tracks
       let urlElement = $(
         `#tracklist > div.trackList > table > tbody > tr:nth-child(${i}) > td.trackTitle > a`
       );
-
       // Another part of the fix for bug with albums with multiple discs
       for (let h = 0; h < ratingElement.length; h++) {
         // Making sure the last one does not have a comma and ends with a }
@@ -177,7 +175,7 @@ async function getPageLink(song: string) {
     songUrlJSON +=
       `"${trackCount}": "` +
       $(
-        `#tracklist > div.trackList > table > tbody > tr:nth-child(${trackCount}) > td.trackTitle`
+        `#tracklist > div.trackList > table > tbody > tr:nth-child(${trackCount}) > td.trackTitle > a`
       ).attr("href") +
       '"\n}';
     songRatingCountJSON +=
