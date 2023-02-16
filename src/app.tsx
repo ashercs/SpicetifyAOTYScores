@@ -4,10 +4,31 @@ import cheerio from "cheerio";
 const { Player } = Spicetify;
 let prevTrack: string;
 let prevRequest: number;
-// Rate limit is unknown so just an estimate.
-const RATE_LIMIT = 10 * 5000;
+let isRefreshing = "False";
 
-// Setting up HTML elements.
+// Button cooldown is set to 5 seconds just to avoid hitting the rate limit.
+const RATE_LIMIT = 5000;
+
+// Refresh icon
+const REFRESH_ICON = `
+<?xml version="1.0" ?><svg fill="white" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"></svg>`;
+new Spicetify.Topbar.Button(
+  "RefreshScore",
+  REFRESH_ICON,
+  refreshrequest,
+  false
+);
+
+// Clear icon
+const CLEAR_ICON = `
+<?xml version="1.0" ?><svg fill="white" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M 8.386719 1.800781 L 7.785156 2.398438 L 3.601562 2.398438 L 3.601562 4.800781 L 20.398438 4.800781 L 20.398438 2.398438 L 16.214844 2.398438 L 15.613281 1.800781 L 15.015625 1.199219 L 8.984375 1.199219 Z M 8.386719 1.800781 M 4.804688 13.402344 C 4.816406 20.230469 4.816406 20.816406 4.867188 20.96875 C 4.964844 21.300781 5.046875 21.480469 5.191406 21.699219 C 5.527344 22.222656 5.996094 22.554688 6.644531 22.734375 C 6.808594 22.78125 7.261719 22.785156 12 22.785156 C 16.738281 22.785156 17.191406 22.78125 17.355469 22.734375 C 18.003906 22.554688 18.472656 22.222656 18.808594 21.699219 C 18.953125 21.480469 19.035156 21.300781 19.132812 20.96875 C 19.183594 20.816406 19.183594 20.230469 19.195312 13.402344 L 19.199219 6 L 4.800781 6 Z M 4.804688 13.402344 "/></svg>`;
+new Spicetify.Topbar.Button(
+  "ClearScore",
+  CLEAR_ICON,
+  clearRating,
+  false
+);
+// Setting up HTML elements. 
 let ratingContainer: HTMLAnchorElement;
 let songRating: HTMLAnchorElement;
 let songTitleBox: HTMLAnchorElement | null;
@@ -54,8 +75,8 @@ export async function fetch(url: string) {
         method: "GET",
         uri: url,
         headers: {
-          "user-agent": "Test",
-          "User-Agent": "Testing",
+          "user-agent": "Mozilla/5.0",
+          "User-Agent": "Mozilla/5.0",
         },
       });
 
@@ -87,9 +108,9 @@ export class ApiError extends Error {
 // Function for fetching aoty URL from album/artist name then parsing the data.
 async function getPageLink(song: string) {
   // Use DuckDuckGo to get the first result that shows up, this is more accurate than just AOTY's search feature.
-  const url = `https://duckduckgo.com/?q=%5Csite%3Aalbumoftheyear.org%2Falbum%20${encodeURIComponent(
+  const url = `https://duckduckgo.com/?q=%5Csite%3Aalbumoftheyear.org%2Falbum%20%22${encodeURIComponent(
     song
-  )}`;
+  )}%22%20filetype:html`;
   console.log(url);
 
   // Getting the AOTY url from the DuckDuckGo search.
@@ -215,13 +236,41 @@ async function getPageLink(song: string) {
   ];
 }
 
+// Function that the refresh button runs.
+async function refreshrequest() {
+  // Get the current time.
+  let now = Date.now();
+  // If it has been less than 5 seconds since the last attempt at running this send notification and don't run the main function.
+  if (now - prevRequest < RATE_LIMIT) {
+    Spicetify.showNotification(
+      `You are on cooldown. Please wait ${
+        (RATE_LIMIT - (now - prevRequest)) / 1000
+      } seconds to avoid hitting the rate limit.`
+    );
+    return;
+  }
+
+  // Fix to make it not spam.
+  isRefreshing = "True";
+
+  // Start the 5 second count.
+  prevRequest = Date.now();
+
+  // Run the main script.
+  update;
+}
+
 async function update() {
   // Check if there is a track playing
   if (!Player.data.playback_id || !Player.data?.track?.metadata) return;
 
   // Check to see if you are replaying the same track.
   const id = Player.data.playback_id;
-  if (id == prevTrack) return;
+
+  // Fix to make it not spam #2.
+  if (id == prevTrack && isRefreshing == "False") return;
+  isRefreshing = "False";
+
   // Check #2 if there is a track playing, infoContainer is also used later to add the album rating text.
   // Also fix for extension not working if friends tab is closed.
   if (
@@ -268,14 +317,20 @@ async function update() {
   if (!title || !album_title || !artist_name) return;
 
   // Making sure to not hit AOTY's rate limit.
-  const now = Date.now();
-  if (prevRequest && now - prevRequest < RATE_LIMIT) return;
+  // let now = Date.now();
+  // if (prevRequest && now - prevRequest < RATE_LIMIT) return;
   prevTrack = id;
 
   try {
     // Removing any deluxes or remasters from album titles.
     album_title = album_title.split(" -")[0];
     album_title = album_title.split(" (")[0];
+
+    // There are a couple results where duckduckgo can't find anything/gets it wrong due to different artist name on Spotify.
+    // These are some fixes, if any other show up create an issue on the GitHub.
+    if (artist_name == "Ms. Lauryn Hill") {
+      artist_name = "Lauryn Hill";
+    }
 
     // Getting the information to search, the format is Artist Album.
     // Example would be "Marvin Gaye What's Going On"
