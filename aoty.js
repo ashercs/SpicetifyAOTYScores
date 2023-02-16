@@ -13071,7 +13071,24 @@ var aoty = (() => {
   var { Player } = Spicetify;
   var prevTrack;
   var prevRequest;
-  var RATE_LIMIT = 10 * 5e3;
+  var isRefreshing = "False";
+  var RATE_LIMIT = 5e3;
+  var REFRESH_ICON = `
+<?xml version="1.0" ?><svg fill="white" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"></svg>`;
+  new Spicetify.Topbar.Button(
+    "RefreshScore",
+    REFRESH_ICON,
+    refreshrequest,
+    false
+  );
+  var CLEAR_ICON = `
+<?xml version="1.0" ?><svg fill="white" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M 8.386719 1.800781 L 7.785156 2.398438 L 3.601562 2.398438 L 3.601562 4.800781 L 20.398438 4.800781 L 20.398438 2.398438 L 16.214844 2.398438 L 15.613281 1.800781 L 15.015625 1.199219 L 8.984375 1.199219 Z M 8.386719 1.800781 M 4.804688 13.402344 C 4.816406 20.230469 4.816406 20.816406 4.867188 20.96875 C 4.964844 21.300781 5.046875 21.480469 5.191406 21.699219 C 5.527344 22.222656 5.996094 22.554688 6.644531 22.734375 C 6.808594 22.78125 7.261719 22.785156 12 22.785156 C 16.738281 22.785156 17.191406 22.78125 17.355469 22.734375 C 18.003906 22.554688 18.472656 22.222656 18.808594 21.699219 C 18.953125 21.480469 19.035156 21.300781 19.132812 20.96875 C 19.183594 20.816406 19.183594 20.230469 19.195312 13.402344 L 19.199219 6 L 4.800781 6 Z M 4.804688 13.402344 "/></svg>`;
+  new Spicetify.Topbar.Button(
+    "ClearScore",
+    CLEAR_ICON,
+    clearRating,
+    false
+  );
   var ratingContainer;
   var songRating;
   var songTitleBox;
@@ -13102,8 +13119,8 @@ var aoty = (() => {
         method: "GET",
         uri: url,
         headers: {
-          "user-agent": "Test",
-          "User-Agent": "Testing"
+          "user-agent": "Mozilla/5.0",
+          "User-Agent": "Mozilla/5.0"
         }
       });
       window.sendCosmosRequest({
@@ -13125,9 +13142,9 @@ var aoty = (() => {
     }
   };
   async function getPageLink(song) {
-    const url = `https://duckduckgo.com/?q=%5Csite%3Aalbumoftheyear.org%2Falbum%20${encodeURIComponent(
+    const url = `https://duckduckgo.com/?q=%5Csite%3Aalbumoftheyear.org%2Falbum%20%22${encodeURIComponent(
       song
-    )}`;
+    )}%22%20filetype:html`;
     console.log(url);
     const res = await fetch2(url);
     const reg = /\?uddg=(.*?)&rut=/;
@@ -13208,13 +13225,26 @@ var aoty = (() => {
       JSONRatingCount
     ];
   }
+  async function refreshrequest() {
+    let now = Date.now();
+    if (now - prevRequest < RATE_LIMIT) {
+      Spicetify.showNotification(
+        `You are on cooldown. Please wait ${(RATE_LIMIT - (now - prevRequest)) / 1e3} seconds to avoid hitting the rate limit.`
+      );
+      return;
+    }
+    isRefreshing = "True";
+    prevRequest = Date.now();
+    update2;
+  }
   async function update2() {
     var _a2, _b, _c;
     if (!Player.data.playback_id || !((_b = (_a2 = Player.data) == null ? void 0 : _a2.track) == null ? void 0 : _b.metadata))
       return;
     const id = Player.data.playback_id;
-    if (id == prevTrack)
+    if (id == prevTrack && isRefreshing == "False")
       return;
+    isRefreshing = "False";
     if (document.querySelector(
       "#main > div > div.Root__top-container.Root__top-container--right-sidebar-visible > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-trackInfo-container"
     )) {
@@ -13247,13 +13277,13 @@ var aoty = (() => {
     } = Player.data.track.metadata;
     if (!title || !album_title || !artist_name)
       return;
-    const now = Date.now();
-    if (prevRequest && now - prevRequest < RATE_LIMIT)
-      return;
     prevTrack = id;
     try {
       album_title = album_title.split(" -")[0];
       album_title = album_title.split(" (")[0];
+      if (artist_name == "Ms. Lauryn Hill") {
+        artist_name = "Lauryn Hill";
+      }
       let searchquery = artist_name + " " + album_title;
       const rating = await getPageLink(searchquery);
       if (document.getElementsByClassName("scoreElement").length >= 1) {
