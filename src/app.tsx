@@ -110,17 +110,21 @@ export class ApiError extends Error {
 // Function for fetching aoty URL from album/artist name then parsing the data.
 async function getPageLink(song: string) {
   // Use DuckDuckGo to get the first result that shows up, this is more accurate than just AOTY's search feature.
-  const url = `https://duckduckgo.com/?q=%5Csite%3Aalbumoftheyear.org%2Falbum%2F%20${encodeURIComponent(
-    song
-  )}%20%2B-reviews`;
+  // const url = `https://duckduckgo.com/?q=%5Csite%3Aalbumoftheyear.org%2Falbum%2F%20${encodeURIComponent(
+  //   song
+  // )}%20%2B-reviews`;
+  const url = `https://www.albumoftheyear.org/search/?q=${encodeURIComponent(
+      song
+    )}`
   console.log(url);
-
+  //
   // Getting the AOTY url from the DuckDuckGo search.
   const res = await fetch(url);
-  const reg = /\?uddg=(.*?)&rut=/;
+  // const reg = /\?uddg=(.*?)&rut=/;
   console.log(res); // Adding soon: retry if status code != 200
-  const aotyUrl = decodeURIComponent(res.body.match(reg)[1]);
-  console.log(aotyUrl);
+  // const aotyUrl = decodeURIComponent(res.body.match(reg)[1]);
+  const $$ = cheerio.load(res.body)
+  const aotyUrl: any = "https://www.albumoftheyear.org" + $$('#centerContent > div > div:nth-child(3) > div:nth-child(2) > a:nth-child(3)').attr('href')
   let res2 = await fetch(aotyUrl);
 
   // Parsing the HTML to find data to be used.
@@ -185,7 +189,7 @@ async function getPageLink(song: string) {
       }
       songRatingsJSON += `"${i}": "` + trackratingbydisc + '",\n';
       songUrlJSON += `"${i}": "` + trackurlbydisc + '",\n';
-      songRatingCountJSON += `"${i}": "` + trackratingcountbydisc + '",\n';
+      songRatingCountJSON += `"${i}": "` + trackratingcountbydisc + '/",\n';
     }
 
     // Making sure the last one does not have a comma and ends with a } part 2
@@ -327,6 +331,7 @@ async function update() {
     // Removing any deluxes or remasters from album titles.
     album_title = album_title.split(" -")[0];
     album_title = album_title.split(" (")[0];
+    album_title = album_title.replace('"', '')
 
     // There are a couple results where duckduckgo can't find anything/gets it wrong due to different artist name on Spotify.
     // These are some fixes, if any other show up create an issue on the GitHub.
