@@ -109,10 +109,8 @@ export class ApiError extends Error {
 
 // Function for fetching aoty URL from album/artist name then parsing the data.
 async function getPageLink(song: string) {
-  // Use DuckDuckGo to get the first result that shows up, this is more accurate than just AOTY's search feature.
-  // const url = `https://duckduckgo.com/?q=%5Csite%3Aalbumoftheyear.org%2Falbum%2F%20${encodeURIComponent(
-  //   song
-  // )}%20%2B-reviews`;
+  
+  // This was changed to just AOTY's search due to duckduckgo being quite inaccurate.
   const url = `https://www.albumoftheyear.org/search/?q=${encodeURIComponent(
       song
     )}`
@@ -144,7 +142,6 @@ async function getPageLink(song: string) {
   // Getting tracklist to see how many tracks there are on the album to later know how many rating elements to check for.
   let tracklist = $("#tracklist > div.trackList > table > tbody");
   let tracks = tracklist.children();
-  let trackCount = tracks.length;
 
   // hasRatings is False by default and changes to True if a track score is detected.
   let hasRatings = "False";
@@ -158,61 +155,133 @@ async function getPageLink(song: string) {
   let songRatingCountJSON = "{\n";
 
   // If tracklist has ratings this will run.
+  let tracklistcount;
+  let longestdisc = 0
+  let testing;
   if (isNumeric(checkIfTrackRatings) == true) {
     // Set hasRatings to true because a tracklist has ratings
     hasRatings = "True";
+    let h = 1
+    let numofdiscs = $('.discNumber')
+
+    // Finding the amount of tracks the longest disc in an album has.
+    // This was a fix for albums that have longer second or third discs than first discs.
+    var arr = []
+    if (numofdiscs.length > 0){
+    for (let i = 0; i < numofdiscs.length; i++) {
+      testing = $('.rightBox').find('.trackListTable').get(i)
+      tracklistcount = $(testing).children('tbody').children('tr').length
+      arr.push(tracklistcount)
+    }
+    longestdisc = arr.reduce((a, b) => Math.max(a, b), -Infinity)
+    }
+
+    // If the album is just one disc it will not check for the longest.
+    if (numofdiscs.length <= 0){
+      testing = $('.rightBox').find('.trackListTable').get(0)
+      tracklistcount = $(testing).children('tbody').children('tr').length
+      longestdisc = tracklistcount
+    }
     // This will loop for the amount of tracks in the tracklist.
-    for (let i = 1; i < trackCount; i++) {
-      // Quick fix for bug with albums with multiple discs.
+    // Or in the case of multiple discs it will loop the amount of times of the longest disc.
+    let ii;
+    let dc;
+    let i = 0
+    if (numofdiscs.length == 0) {
+      ii = 0
+      dc = 0
+    }
+    if (numofdiscs.length > 0) {
+      ii = 1
+    }
+    for (i = Number(ii); i <= numofdiscs.length; i++) {
+      let trackcounter = 0
+      if (numofdiscs.length > 0) {
+        dc = i - 1
+      }
+      // Getting the amount of tracks in a disc.
+      testing = $('.rightBox').find('.trackListTable').get(Number(dc))
+      tracklistcount = $(testing).children('tbody').children('tr').length
+
+      // Setting up the JSON for data
       let trackratingbydisc = "";
       let trackurlbydisc = "";
       let trackratingcountbydisc = "";
 
-      // Element with the track ratings
-      let ratingElement = $(
-        `#tracklist > div.trackList > table > tbody > tr:nth-child(${i}) > td.trackRating > span`
-      );
-      // Url to the tracks
-      let urlElement = $(
-        `#tracklist > div.trackList > table > tbody > tr:nth-child(${i}) > td.trackTitle > a`
-      );
-      // Another part of the fix for bug with albums with multiple discs
-      for (let h = 0; h < ratingElement.length; h++) {
-        // Making sure the last one does not have a comma and ends with a }
-        if (i != trackCount) {
-          let trbd1 = $(ratingElement[h]);
-          trackratingbydisc += trbd1.text();
-          let tubd1 = $(urlElement[h]);
-          trackurlbydisc += tubd1.attr("href");
-          trackratingcountbydisc += trbd1.attr("title");
+      // Run the amount of times as the longest disc has tracks
+      for (h = 0; h < longestdisc; h++) {
+        trackcounter++
+
+        // Element where track ratings and rating counts are obtained.
+        let ratingElement = $(
+          `#tracklist > div.trackList > table > tbody > tr:nth-child(${trackcounter}) > td.trackRating > span`
+        );
+        // Element where the track URL is obtained.
+        let urlElement = $(
+          `#tracklist > div.trackList > table > tbody > tr:nth-child(${trackcounter}) > td.trackTitle > a`
+        );
+          let trbd1;
+          let tubd1;
+
+          // If there isn't the same amount of elements as the amount of discs
+          // and it is not on the longest disc. (When first disc is longer than the second)
+          if (ratingElement.length !== numofdiscs.length && tracklistcount !== longestdisc){
+            trackratingbydisc += "00&"
+            trackurlbydisc += "/song/undefined"
+            trackratingcountbydisc += "0 Ratings&"
+          }
+
+          // If there isn't the same amount of elements as the amount of discs
+          // and you are on the longest disc. (When second disc is longer than the first)
+          if (ratingElement.length !== numofdiscs.length && tracklistcount == longestdisc){
+
+            // The number it would normally be has to be subtracted by 1 if the second disc is longer
+            // this is because there would only be 1 element instead of 2, without this the output would be undefined
+            trbd1 = $(ratingElement[ratingElement.length - 1]);
+
+            // Each bit of data is split up with a & symbol for easier parsing.
+            trackratingbydisc += trbd1.text() + "&"
+            tubd1 = $(urlElement[ratingElement.length - 1]);
+            trackurlbydisc += tubd1.attr("href")
+            trackratingcountbydisc += trbd1.attr("title") + "&"
+          }
+
+          // If there is the same amount of elements as the amount of discs.
+          if (ratingElement.length == numofdiscs.length) {
+            trbd1 = $(ratingElement[Number(dc)]);
+
+            // Each bit of data is split up with a & symbol for easier parsing.
+            trackratingbydisc += trbd1.text() + "&"
+            tubd1 = $(urlElement[Number(dc)]);
+            trackurlbydisc += tubd1.attr("href")
+            trackratingcountbydisc += trbd1.attr("title") + "&"
         }
       }
-      songRatingsJSON += `"${i}": "` + trackratingbydisc + '",\n';
-      songUrlJSON += `"${i}": "` + trackurlbydisc + '",\n';
-      songRatingCountJSON += `"${i}": "` + trackratingcountbydisc + '/",\n';
+
+      // If it is the last iteration OR there is only 1 disc
+      // it will not add a comma to the end, without this in place there would be
+      // an error parsing the JSON.
+      if (dc === numofdiscs.length - 1 || numofdiscs.length == 0) {
+        songRatingsJSON += `"${dc}": "` + trackratingbydisc + '"\n';
+        songUrlJSON += `"${dc}": "` + trackurlbydisc + '"\n';
+        songRatingCountJSON += `"${dc}": "` + trackratingcountbydisc + '"\n';
+      }
+
+      // If it isn't the last iteration it will add a comma to the end
+      // without this in place there would be an error parsing the JSON.
+      if (dc !== numofdiscs.length - 1 && numofdiscs.length > 0){
+        songRatingsJSON += `"${dc}": "` + trackratingbydisc + '",\n';
+        songUrlJSON += `"${dc}": "` + trackurlbydisc + '",\n';
+        songRatingCountJSON += `"${dc}": "` + trackratingcountbydisc + '",\n';
+      }
     }
 
-    // Making sure the last one does not have a comma and ends with a } part 2
-    songRatingsJSON +=
-      `"${trackCount}": "` +
-      $(
-        `#tracklist > div.trackList > table > tbody > tr:nth-child(${trackCount}) > td.trackRating > span`
-      ).text() +
-      '"\n}';
-    songUrlJSON +=
-      `"${trackCount}": "` +
-      $(
-        `#tracklist > div.trackList > table > tbody > tr:nth-child(${trackCount}) > td.trackTitle > a`
-      ).attr("href") +
-      '"\n}';
-    songRatingCountJSON +=
-      `"${trackCount}": "` +
-      $(
-        `#tracklist > div.trackList > table > tbody > tr:nth-child(${trackCount}) > td.trackRating > span`
-      ).attr("title") +
-      '"\n}';
+    // Adding } to the end of the JSON so it can be parsed without error.
+    songRatingsJSON += '}';
+    songUrlJSON += '}';
+    songRatingCountJSON += '}';
 
-    // Parsing the JSONs
+    // Parsing the JSONs.
     JSONSongUrls = JSON.parse(songUrlJSON);
     JSONTrackRatings = JSON.parse(songRatingsJSON);
     JSONRatingCount = JSON.parse(songRatingCountJSON);
@@ -333,8 +402,9 @@ async function update() {
     album_title = album_title.split(" (")[0];
     album_title = album_title.replace('"', '')
 
-    // There are a couple results where duckduckgo can't find anything/gets it wrong due to different artist name on Spotify.
-    // These are some fixes, if any other show up create an issue on the GitHub.
+    // Some artists have different names on Spotify than on AOTY
+    // I haven't seen many examples but this is the main one I have noticed
+    // If there are any more create an issue on the github.
     if (artist_name == "Ms. Lauryn Hill") {
       artist_name = "Lauryn Hill";
     }
@@ -387,15 +457,16 @@ async function update() {
         // Creating the element that will be added.
         songRating = document.createElement("a");
 
-        // There was an issue where let's say you were on track 4 on disc 2 of an album
-        // It would return that you were just on track 4 when in reality you could be on track 16.
-        // My solution just added the scores together and split them every 2 characters.
-        // From the list of 2 characters it would get the one that matches the current disc you are on.
-        // Only issue is if a song has lower than a 10 in ratings which is quite uncommon so I may not make a fix for that.
-        // Another issue that may arise is if a second or third disc has more tracks than the first which I have not seen before.
+        // Example JSON for rating[4] (song score JSON) would be:
+        // 0: "92&83&95&94&98&90&94&"
+        // 1: "78&73&82&94&94&95&"
+        // This is an example for an album with two discs.
+        // The data is split using the & symbol.
+        // Since the first one is 0 and the first album_disc_number would be 1
+        // 1 has to be subtracted.
         let songScoreList =
-          rating[4][Number(album_track_number)].match(/.{1,2}/g) ?? [];
-        let songScore = songScoreList[Number(album_disc_number) - 1];
+          rating[4][Number(album_disc_number) - 1].split("&")
+        let songScore = songScoreList[Number(album_track_number) - 1];
         songRating.className = "songScore";
 
         // Depending on the score of a song the color will change.
@@ -419,20 +490,18 @@ async function update() {
         }
 
         // Adding the URL to the text to lead to the song link.
-        let partUrl = String(rating[6][Number(album_track_number)]).split(
-          "/song"
-        );
-        songRating.href =
-          "https://www.albumoftheyear.org/song" +
-          partUrl[Number(album_disc_number)];
-
+        let trackUrl = String(rating[6][Number(album_disc_number) - 1]).split("/song")[Number(album_track_number)]
+        songRating.href = "https://albumoftheyear.org/song" + trackUrl
         // Styling.
         songRating.style.fontSize = "10px";
         songRating.style.fontWeight = "bold";
 
         // Adding hover text that displays the amount of users that have rated the track.
-        let partTitle = rating[7][Number(album_track_number)].split("Ratings");
-        songRating.title = partTitle[Number(album_disc_number) - 1] + "Ratings";
+        // Works the same way as the songScoreList talked about earlier.
+        // Example for rating[7] (Track rating count) would be:
+        //
+        let ratingTitle = rating[7][Number(album_disc_number) - 1].split("&")[Number(album_track_number) - 1];
+        songRating.title = ratingTitle
 
         // Adding this element to the same area the track title is.
         songTitleBox.appendChild(songRating);
