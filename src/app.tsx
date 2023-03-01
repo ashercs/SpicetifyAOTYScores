@@ -22,14 +22,9 @@ new Spicetify.Topbar.Button(
 // Clear icon
 const CLEAR_ICON = `
 <?xml version="1.0" ?><svg fill="white" height="20" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M 8.386719 1.800781 L 7.785156 2.398438 L 3.601562 2.398438 L 3.601562 4.800781 L 20.398438 4.800781 L 20.398438 2.398438 L 16.214844 2.398438 L 15.613281 1.800781 L 15.015625 1.199219 L 8.984375 1.199219 Z M 8.386719 1.800781 M 4.804688 13.402344 C 4.816406 20.230469 4.816406 20.816406 4.867188 20.96875 C 4.964844 21.300781 5.046875 21.480469 5.191406 21.699219 C 5.527344 22.222656 5.996094 22.554688 6.644531 22.734375 C 6.808594 22.78125 7.261719 22.785156 12 22.785156 C 16.738281 22.785156 17.191406 22.78125 17.355469 22.734375 C 18.003906 22.554688 18.472656 22.222656 18.808594 21.699219 C 18.953125 21.480469 19.035156 21.300781 19.132812 20.96875 C 19.183594 20.816406 19.183594 20.230469 19.195312 13.402344 L 19.199219 6 L 4.800781 6 Z M 4.804688 13.402344 "/></svg>`;
-new Spicetify.Topbar.Button(
-  "ClearScore",
-  CLEAR_ICON,
-  clearRating,
-  false
-);
+new Spicetify.Topbar.Button("ClearScore", CLEAR_ICON, clearRating, false);
 
-// Setting up HTML elements. 
+// Setting up HTML elements.
 let ratingContainer: HTMLAnchorElement;
 let songRating: HTMLAnchorElement;
 let songTitleBox: HTMLAnchorElement | null;
@@ -109,11 +104,10 @@ export class ApiError extends Error {
 
 // Function for fetching aoty URL from album/artist name then parsing the data.
 async function getPageLink(song: string) {
-  
   // This was changed to just AOTY's search due to duckduckgo being quite inaccurate.
   const url = `https://www.albumoftheyear.org/search/?q=${encodeURIComponent(
-      song
-    )}`
+    song
+  )}`;
   console.log(url);
   //
   // Getting the AOTY url from the DuckDuckGo search.
@@ -121,8 +115,12 @@ async function getPageLink(song: string) {
   // const reg = /\?uddg=(.*?)&rut=/;
   console.log(res); // Adding soon: retry if status code != 200
   // const aotyUrl = decodeURIComponent(res.body.match(reg)[1]);
-  const $$ = cheerio.load(res.body)
-  const aotyUrl: any = "https://www.albumoftheyear.org" + $$('#centerContent > div > div:nth-child(3) > div:nth-child(2) > a:nth-child(3)').attr('href')
+  const $$ = cheerio.load(res.body);
+  const aotyUrl: any =
+    "https://www.albumoftheyear.org" +
+    $$(
+      "#centerContent > div > div:nth-child(3) > div:nth-child(2) > a:nth-child(3)"
+    ).attr("href");
   let res2 = await fetch(aotyUrl);
 
   // Parsing the HTML to find data to be used.
@@ -156,52 +154,52 @@ async function getPageLink(song: string) {
 
   // If tracklist has ratings this will run.
   let tracklistcount;
-  let longestdisc = 0
+  let longestdisc = 0;
   let testing;
   if (isNumeric(checkIfTrackRatings) == true) {
     // Set hasRatings to true because a tracklist has ratings
     hasRatings = "True";
-    let h = 1
-    let numofdiscs = $('.discNumber')
+    let h = 1;
+    let numofdiscs = $(".discNumber");
 
     // Finding the amount of tracks the longest disc in an album has.
     // This was a fix for albums that have longer second or third discs than first discs.
-    var arr = []
-    if (numofdiscs.length > 0){
-    for (let i = 0; i < numofdiscs.length; i++) {
-      testing = $('.rightBox').find('.trackListTable').get(i)
-      tracklistcount = $(testing).children('tbody').children('tr').length
-      arr.push(tracklistcount)
-    }
-    longestdisc = arr.reduce((a, b) => Math.max(a, b), -Infinity)
+    var arr = [];
+    if (numofdiscs.length > 0) {
+      for (let i = 0; i < numofdiscs.length; i++) {
+        testing = $(".rightBox").find(".trackListTable").get(i);
+        tracklistcount = $(testing).children("tbody").children("tr").length;
+        arr.push(tracklistcount);
+      }
+      longestdisc = arr.reduce((a, b) => Math.max(a, b), -Infinity);
     }
 
     // If the album is just one disc it will not check for the longest.
-    if (numofdiscs.length <= 0){
-      testing = $('.rightBox').find('.trackListTable').get(0)
-      tracklistcount = $(testing).children('tbody').children('tr').length
-      longestdisc = tracklistcount
+    if (numofdiscs.length <= 0) {
+      testing = $(".rightBox").find(".trackListTable").get(0);
+      tracklistcount = $(testing).children("tbody").children("tr").length;
+      longestdisc = tracklistcount;
     }
     // This will loop for the amount of tracks in the tracklist.
     // Or in the case of multiple discs it will loop the amount of times of the longest disc.
     let ii;
     let dc;
-    let i = 0
+    let i = 0;
     if (numofdiscs.length == 0) {
-      ii = 0
-      dc = 0
+      ii = 0;
+      dc = 0;
     }
     if (numofdiscs.length > 0) {
-      ii = 1
+      ii = 1;
     }
     for (i = Number(ii); i <= numofdiscs.length; i++) {
-      let trackcounter = 0
+      let trackcounter = 0;
       if (numofdiscs.length > 0) {
-        dc = i - 1
+        dc = i - 1;
       }
       // Getting the amount of tracks in a disc.
-      testing = $('.rightBox').find('.trackListTable').get(Number(dc))
-      tracklistcount = $(testing).children('tbody').children('tr').length
+      testing = $(".rightBox").find(".trackListTable").get(Number(dc));
+      tracklistcount = $(testing).children("tbody").children("tr").length;
 
       // Setting up the JSON for data
       let trackratingbydisc = "";
@@ -210,7 +208,7 @@ async function getPageLink(song: string) {
 
       // Run the amount of times as the longest disc has tracks
       for (h = 0; h < longestdisc; h++) {
-        trackcounter++
+        trackcounter++;
 
         // Element where track ratings and rating counts are obtained.
         let ratingElement = $(
@@ -220,41 +218,46 @@ async function getPageLink(song: string) {
         let urlElement = $(
           `#tracklist > div.trackList > table > tbody > tr:nth-child(${trackcounter}) > td.trackTitle > a`
         );
-          let trbd1;
-          let tubd1;
+        let trbd1;
+        let tubd1;
 
-          // If there isn't the same amount of elements as the amount of discs
-          // and it is not on the longest disc. (When first disc is longer than the second)
-          if (ratingElement.length !== numofdiscs.length && tracklistcount !== longestdisc){
-            trackratingbydisc += "00&"
-            trackurlbydisc += "/song/undefined"
-            trackratingcountbydisc += "0 Ratings&"
-          }
+        // If there isn't the same amount of elements as the amount of discs
+        // and it is not on the longest disc. (When first disc is longer than the second)
+        if (
+          ratingElement.length !== numofdiscs.length &&
+          tracklistcount !== longestdisc
+        ) {
+          trackratingbydisc += "00&";
+          trackurlbydisc += "/song/undefined";
+          trackratingcountbydisc += "0 Ratings&";
+        }
 
-          // If there isn't the same amount of elements as the amount of discs
-          // and you are on the longest disc. (When second disc is longer than the first)
-          if (ratingElement.length !== numofdiscs.length && tracklistcount == longestdisc){
+        // If there isn't the same amount of elements as the amount of discs
+        // and you are on the longest disc. (When second disc is longer than the first)
+        if (
+          ratingElement.length !== numofdiscs.length &&
+          tracklistcount == longestdisc
+        ) {
+          // The number it would normally be has to be subtracted by 1 if the second disc is longer
+          // this is because there would only be 1 element instead of 2, without this the output would be undefined
+          trbd1 = $(ratingElement[ratingElement.length - 1]);
 
-            // The number it would normally be has to be subtracted by 1 if the second disc is longer
-            // this is because there would only be 1 element instead of 2, without this the output would be undefined
-            trbd1 = $(ratingElement[ratingElement.length - 1]);
+          // Each bit of data is split up with a & symbol for easier parsing.
+          trackratingbydisc += trbd1.text() + "&";
+          tubd1 = $(urlElement[ratingElement.length - 1]);
+          trackurlbydisc += tubd1.attr("href");
+          trackratingcountbydisc += trbd1.attr("title") + "&";
+        }
 
-            // Each bit of data is split up with a & symbol for easier parsing.
-            trackratingbydisc += trbd1.text() + "&"
-            tubd1 = $(urlElement[ratingElement.length - 1]);
-            trackurlbydisc += tubd1.attr("href")
-            trackratingcountbydisc += trbd1.attr("title") + "&"
-          }
+        // If there is the same amount of elements as the amount of discs.
+        if (ratingElement.length == numofdiscs.length) {
+          trbd1 = $(ratingElement[Number(dc)]);
 
-          // If there is the same amount of elements as the amount of discs.
-          if (ratingElement.length == numofdiscs.length) {
-            trbd1 = $(ratingElement[Number(dc)]);
-
-            // Each bit of data is split up with a & symbol for easier parsing.
-            trackratingbydisc += trbd1.text() + "&"
-            tubd1 = $(urlElement[Number(dc)]);
-            trackurlbydisc += tubd1.attr("href")
-            trackratingcountbydisc += trbd1.attr("title") + "&"
+          // Each bit of data is split up with a & symbol for easier parsing.
+          trackratingbydisc += trbd1.text() + "&";
+          tubd1 = $(urlElement[Number(dc)]);
+          trackurlbydisc += tubd1.attr("href");
+          trackratingcountbydisc += trbd1.attr("title") + "&";
         }
       }
 
@@ -269,7 +272,7 @@ async function getPageLink(song: string) {
 
       // If it isn't the last iteration it will add a comma to the end
       // without this in place there would be an error parsing the JSON.
-      if (dc !== numofdiscs.length - 1 && numofdiscs.length > 0){
+      if (dc !== numofdiscs.length - 1 && numofdiscs.length > 0) {
         songRatingsJSON += `"${dc}": "` + trackratingbydisc + '",\n';
         songUrlJSON += `"${dc}": "` + trackurlbydisc + '",\n';
         songRatingCountJSON += `"${dc}": "` + trackratingcountbydisc + '",\n';
@@ -277,9 +280,9 @@ async function getPageLink(song: string) {
     }
 
     // Adding } to the end of the JSON so it can be parsed without error.
-    songRatingsJSON += '}';
-    songUrlJSON += '}';
-    songRatingCountJSON += '}';
+    songRatingsJSON += "}";
+    songUrlJSON += "}";
+    songRatingCountJSON += "}";
 
     // Parsing the JSONs.
     JSONSongUrls = JSON.parse(songUrlJSON);
@@ -400,7 +403,7 @@ async function update() {
     // Removing any deluxes or remasters from album titles.
     album_title = album_title.split(" -")[0];
     album_title = album_title.split(" (")[0];
-    album_title = album_title.replace('"', '')
+    album_title = album_title.replace('"', "");
 
     // Some artists have different names on Spotify than on AOTY
     // I haven't seen many examples but this is the main one I have noticed
@@ -464,8 +467,7 @@ async function update() {
         // The data is split using the & symbol.
         // Since the first one is 0 and the first album_disc_number would be 1
         // 1 has to be subtracted.
-        let songScoreList =
-          rating[4][Number(album_disc_number) - 1].split("&")
+        let songScoreList = rating[4][Number(album_disc_number) - 1].split("&");
         let songScore = songScoreList[Number(album_track_number) - 1];
         songRating.className = "songScore";
 
@@ -490,8 +492,10 @@ async function update() {
         }
 
         // Adding the URL to the text to lead to the song link.
-        let trackUrl = String(rating[6][Number(album_disc_number) - 1]).split("/song")[Number(album_track_number)]
-        songRating.href = "https://albumoftheyear.org/song" + trackUrl
+        let trackUrl = String(rating[6][Number(album_disc_number) - 1]).split(
+          "/song"
+        )[Number(album_track_number)];
+        songRating.href = "https://albumoftheyear.org/song" + trackUrl;
         // Styling.
         songRating.style.fontSize = "10px";
         songRating.style.fontWeight = "bold";
@@ -500,8 +504,11 @@ async function update() {
         // Works the same way as the songScoreList talked about earlier.
         // Example for rating[7] (Track rating count) would be:
         //
-        let ratingTitle = rating[7][Number(album_disc_number) - 1].split("&")[Number(album_track_number) - 1];
-        songRating.title = ratingTitle
+        let ratingTitle =
+          rating[7][Number(album_disc_number) - 1].split("&")[
+            Number(album_track_number) - 1
+          ];
+        songRating.title = ratingTitle;
 
         // Adding this element to the same area the track title is.
         songTitleBox.appendChild(songRating);
