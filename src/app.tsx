@@ -29,7 +29,6 @@ let ratingContainer: HTMLAnchorElement;
 let songRating: HTMLAnchorElement;
 let songTitleBox: HTMLAnchorElement | null;
 let infoContainer: HTMLElement | null;
-let infoContainer2: HTMLElement | null;
 
 // Clearing the displayed ratings.
 function clearRating() {
@@ -48,6 +47,7 @@ function clearRating() {
       ) {
         document.getElementsByClassName("scoreElement")[i].remove();
       }
+      if (document.getElementsByClassName("songScore")[0]){
       for (
         let i = 0;
         i < document.getElementsByClassName("songScore").length;
@@ -55,6 +55,7 @@ function clearRating() {
       ) {
         document.getElementsByClassName("songScore")[i].remove();
       }
+    }
     } catch (e) {}
   }
 }
@@ -103,7 +104,8 @@ export class ApiError extends Error {
 }
 
 // Function for fetching aoty URL from album/artist name then parsing the data.
-async function getPageLink(song: string) {
+async function getPageLink(artist: string, album: string) {
+  let song = artist + " " + album
   // This was changed to just AOTY's search due to duckduckgo being quite inaccurate.
   const url = `https://www.albumoftheyear.org/search/?q=${encodeURIComponent(
     song
@@ -115,12 +117,44 @@ async function getPageLink(song: string) {
   // const reg = /\?uddg=(.*?)&rut=/;
   console.log(res); // Adding soon: retry if status code != 200
   // const aotyUrl = decodeURIComponent(res.body.match(reg)[1]);
-  const $$ = cheerio.load(res.body);
-  const aotyUrl: any =
+  
+  let $$ = cheerio.load(res.body);
+  let aotyUrl: any =
     "https://www.albumoftheyear.org" +
     $$(
       "#centerContent > div > div:nth-child(3) > div:nth-child(2) > a:nth-child(3)"
     ).attr("href");
+  if (aotyUrl == "https://www.albumoftheyear.orgundefined"){
+    if (res.status == 500) {
+      Spicetify.showNotification(`Request failed, retrying.`);
+      getPageLink(artist, album)
+    }
+    if (res.status == 200) {
+      Spicetify.showNotification(`No release found on AOTY, searching just the album title without artist name (may return inaccurate results)`);
+      const url2 = `https://www.albumoftheyear.org/search/?q=${encodeURIComponent(album)}`;
+      let res2 = await fetch(url2)
+      $$ = cheerio.load(res2.body)
+      let aotyUrl2 = "https://www.albumoftheyear.org" + $$("#centerContent > div > div:nth-child(3) > div:nth-child(2) > a:nth-child(3)").attr("href");
+      aotyUrl = aotyUrl2
+      let artistname = $$("#centerContent > div > div:nth-child(3) > div:nth-child(2) > a:nth-child(2) > div")
+      let albumname = $$("#centerContent > div > div:nth-child(3) > div:nth-child(2) > a:nth-child(3) > div")
+      if (aotyUrl2 !== "https://www.albumoftheyear.orgundefined" && res.status == 200){
+        Spicetify.showNotification(`Found Release for ${albumname} by ${artistname}`);
+      }
+      if (aotyUrl2 == "https://www.albumoftheyear.orgundefined" && res.status == 200){
+        sleep(2000)
+        Spicetify.showNotification(`No release found.`);
+      //   Spicetify.showNotification(`No release found on AOTY, searching with DuckDuckGo (may return inaccurate results)`);
+      //   const ddgurl = `https://duckduckgo.com/?q=%5Csite%3Aalbumoftheyear.org%2Falbum%2F%20${encodeURIComponent(album)}%20%2B-reviews`;
+      //   const ddgres = await fetch(ddgurl);
+      //   const reg = /\?uddg=(.*?)&rut=/;
+      //   console.log(decodeURIComponent(ddgres.body.match(reg)[1]))
+      //   aotyUrl = decodeURIComponent(ddgres.body.match(reg)[1]);
+      //   console.log('hello')
+      }
+    }
+  }
+  console.log(aotyUrl)
   let res2 = await fetch(aotyUrl);
 
   // Parsing the HTML to find data to be used.
@@ -136,10 +170,6 @@ async function getPageLink(song: string) {
   let checkIfTrackRatings = $(
     "#tracklist > div.trackList > table > tbody > tr:nth-child(1) > td.trackRating > span"
   ).text();
-
-  // Getting tracklist to see how many tracks there are on the album to later know how many rating elements to check for.
-  let tracklist = $("#tracklist > div.trackList > table > tbody");
-  let tracks = tracklist.children();
 
   // hasRatings is False by default and changes to True if a track score is detected.
   let hasRatings = "False";
@@ -414,10 +444,8 @@ async function update() {
 
     // Getting the information to search, the format is Artist Album.
     // Example would be "Marvin Gaye What's Going On"
-    let searchquery = artist_name + " " + album_title;
-
     // Running the function to get the URL and parse it for information with the release.
-    const rating: any = await getPageLink(searchquery);
+    const rating: any = await getPageLink(artist_name, album_title);
 
     // Making sure no duplicate rating glitch.
     if (document.getElementsByClassName("scoreElement").length >= 1) {
