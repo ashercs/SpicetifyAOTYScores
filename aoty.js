@@ -13087,12 +13087,17 @@ var aoty = (() => {
   var ratingContainer;
   var songRating;
   var songTitleBox;
+  var songTitle;
   var infoContainer;
+  function countInstances(string, word) {
+    return string.split(word).length - 1;
+  }
   function clearRating() {
     if (infoContainer && ratingContainer) {
       try {
         if (songTitleBox) {
           songTitleBox.removeChild(songRating);
+          songTitleBox.children[0].style.fontWeight = 400;
         }
         infoContainer.removeChild(ratingContainer);
         for (let i = 0; i < document.getElementsByClassName("scoreElement").length; i++) {
@@ -13106,6 +13111,43 @@ var aoty = (() => {
       } catch (e) {
       }
     }
+  }
+  function similarity(s1, s2) {
+    var longer = s1;
+    var shorter = s2;
+    if (s1.length < s2.length) {
+      longer = s2;
+      shorter = s1;
+    }
+    var longerLength = longer.length;
+    if (longerLength == 0) {
+      return 1;
+    }
+    return (longerLength - editDistance(longer, shorter)) / parseFloat(longerLength);
+  }
+  function editDistance(s1, s2) {
+    s1 = s1.toLowerCase();
+    s2 = s2.toLowerCase();
+    var costs = new Array();
+    for (var i = 0; i <= s1.length; i++) {
+      var lastValue = i;
+      for (var j = 0; j <= s2.length; j++) {
+        if (i == 0)
+          costs[j] = j;
+        else {
+          if (j > 0) {
+            var newValue = costs[j - 1];
+            if (s1.charAt(i - 1) != s2.charAt(j - 1))
+              newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+            costs[j - 1] = lastValue;
+            lastValue = newValue;
+          }
+        }
+      }
+      if (i > 0)
+        costs[s2.length] = lastValue;
+    }
+    return costs[s2.length];
   }
   function isNumeric(value) {
     return /^-?\d+$/.test(value);
@@ -13140,34 +13182,206 @@ var aoty = (() => {
   };
   async function getPageLink(artist, album) {
     let song = artist + " " + album;
-    const url = `https://www.albumoftheyear.org/search/?q=${encodeURIComponent(
+    const url = `https://www.albumoftheyear.org/search/albums/?q=${encodeURIComponent(
       song
     )}`;
     console.log(url);
     const res = await fetch2(url);
     console.log(res);
     let $$ = esm_default2.load(res.body);
-    let aotyUrl = "https://www.albumoftheyear.org" + $$(
-      "#centerContent > div > div:nth-child(3) > div:nth-child(2) > a:nth-child(3)"
-    ).attr("href");
+    let aotyUrl = "https://www.albumoftheyear.orgundefined";
+    let SimToArtistJSON = "{\n";
+    let ArtistToUrlJSON = "{\n";
+    let ArtistToSimJSON = "{\n";
+    let ArtistToAlbumJSON = "{\n";
+    let SimToAlbumJSON = "{\n";
+    let AlbumToUrlJSON = "{\n";
+    let ArtistList = [];
+    let AlbumList = [];
+    for (let i = 0; i < $$(".artistTitle").length; i++) {
+      ArtistList.push($$(".artistTitle")[i].children[0].data);
+      AlbumList.push($$(".albumTitle")[i].children[0].data);
+    }
+    if (ArtistList.length == 1) {
+      if ($$(".artistTitle")[0].parentNode.parentNode.children[2]["attribs"]["href"]) {
+        aotyUrl = "https://www.albumoftheyear.org" + $$(".artistTitle")[0].parentNode.parentNode.children[2]["attribs"]["href"];
+      }
+    }
+    if (ArtistList.length > 1) {
+      let ArtistSimArray = [];
+      for (let h = 0; h < ArtistList.length; h++) {
+        let i = ArtistList.length - (h + 1);
+        if (i !== 0) {
+          SimToArtistJSON += `"${similarity(ArtistList[i], artist)}": "${ArtistList[i]}",
+`;
+          ArtistToUrlJSON += `"${ArtistList[i]}": "${$$(".artistTitle")[i].parentNode.parentNode.children[2]["attribs"]["href"]}",
+`;
+          ArtistToSimJSON += `"${ArtistList[i]}": "${similarity(
+            ArtistList[i],
+            artist
+          )}",
+`;
+          ArtistToAlbumJSON += `"${ArtistList[i]}": ${AlbumList[i]}
+`;
+          ArtistSimArray.push(similarity(ArtistList[i], artist));
+          AlbumToUrlJSON += `"${AlbumList[i].replaceAll('"', '\\"')}": "${$$(".artistTitle")[i].parentNode.parentNode.children[2]["attribs"]["href"]}",
+`;
+        }
+        if (i == 0) {
+          SimToArtistJSON += `"${similarity(ArtistList[i], artist)}": "${ArtistList[i]}"
+}`;
+          ArtistToUrlJSON += `"${ArtistList[i]}": "${$$(".artistTitle")[i].parentNode.parentNode.children[2]["attribs"]["href"]}"
+}`;
+          ArtistToSimJSON += `"${ArtistList[i]}": "${similarity(
+            ArtistList[i],
+            artist
+          )}"
+}`;
+          ArtistToAlbumJSON += `"${ArtistList[i]}": ${AlbumList[i]}`;
+          AlbumToUrlJSON += `"${AlbumList[i].replaceAll('"', '\\"')}": "${$$(".artistTitle")[i].parentNode.parentNode.children[2]["attribs"]["href"]}"
+}`;
+          ArtistSimArray.push(similarity(ArtistList[i], artist));
+        }
+      }
+      let DupeAristArray = [];
+      let DupeArtistSimArr = [];
+      let MostSimArtist = JSON.parse(SimToArtistJSON)[ArtistSimArray.reduce((a, b) => Math.max(a, b), -Infinity)];
+      var lines = ArtistToAlbumJSON.split("\n");
+      if (countInstances(ArtistToUrlJSON, MostSimArtist) > 1) {
+        for (let h = 0; h < lines.length; h++) {
+          let line = lines[h];
+          if (line.indexOf(`"${MostSimArtist}":`) != -1) {
+            DupeAristArray.push(line.split(`"${MostSimArtist}": `)[1]);
+          }
+        }
+      }
+      if (DupeAristArray.length > 1) {
+        for (let a = 0; a < DupeAristArray.length; a++) {
+          if (a !== DupeAristArray.length - 1) {
+            SimToAlbumJSON += `"${similarity(DupeAristArray[a], album)}": "${DupeAristArray[a].replaceAll('"', '\\"')}",
+`;
+          }
+          if (a == DupeAristArray.length - 1) {
+            SimToAlbumJSON += `"${similarity(DupeAristArray[a], album)}": "${DupeAristArray[a].replaceAll('"', '\\"')}"
+}`;
+          }
+          DupeArtistSimArr.push(similarity(DupeAristArray[a], album));
+        }
+      }
+      if (DupeAristArray.length >= 1) {
+        let MostSimAlbum = JSON.parse(SimToAlbumJSON)[DupeArtistSimArr.reduce((a, b) => Math.max(a, b), -Infinity)];
+        aotyUrl = "https://www.albumoftheyear.org" + JSON.parse(AlbumToUrlJSON)[MostSimAlbum];
+      }
+      if (DupeAristArray.length < 1) {
+        if (JSON.parse(ArtistToSimJSON)[MostSimArtist] > 0.3) {
+          aotyUrl = "https://www.albumoftheyear.org" + JSON.parse(ArtistToUrlJSON)[MostSimArtist];
+        }
+      }
+    }
     if (aotyUrl == "https://www.albumoftheyear.orgundefined") {
       if (res.status == 500) {
+        sleep(3e3);
         Spicetify.showNotification(`Request failed, retrying.`);
         getPageLink(artist, album);
       }
       if (res.status == 200) {
-        Spicetify.showNotification(`No release found on AOTY, searching just the album title without artist name (may return inaccurate results)`);
-        const url2 = `https://www.albumoftheyear.org/search/?q=${encodeURIComponent(album)}`;
+        Spicetify.showNotification(
+          `No release found on AOTY, searching just the album title without artist name (may return inaccurate results)`
+        );
+        const url2 = `https://www.albumoftheyear.org/search/albums/?q=${encodeURIComponent(
+          album
+        )}`;
         let res22 = await fetch2(url2);
         $$ = esm_default2.load(res22.body);
-        let aotyUrl2 = "https://www.albumoftheyear.org" + $$("#centerContent > div > div:nth-child(3) > div:nth-child(2) > a:nth-child(3)").attr("href");
-        aotyUrl = aotyUrl2;
-        let artistname = $$("#centerContent > div > div:nth-child(3) > div:nth-child(2) > a:nth-child(2) > div");
-        let albumname = $$("#centerContent > div > div:nth-child(3) > div:nth-child(2) > a:nth-child(3) > div");
-        if (aotyUrl2 !== "https://www.albumoftheyear.orgundefined" && res.status == 200) {
-          Spicetify.showNotification(`Found Release for ${albumname} by ${artistname}`);
+        let SimToArtistJSON2 = "{\n";
+        let ArtistToUrlJSON2 = "{\n";
+        let ArtistToSimJSON2 = "{\n";
+        let ArtistToAlbumJSON2 = "{\n";
+        let SimToAlbumJSON2 = "{\n";
+        let AlbumToUrlJSON2 = "{\n";
+        let ArtistList2 = [];
+        let AlbumList2 = [];
+        for (let i = 0; i < $$(".artistTitle").length; i++) {
+          ArtistList2.push($$(".artistTitle")[i].children[0].data);
+          AlbumList2.push($$(".albumTitle")[i].children[0].data);
         }
-        if (aotyUrl2 == "https://www.albumoftheyear.orgundefined" && res.status == 200) {
+        if (ArtistList2.length == 1) {
+          if ($$(".artistTitle")[0].parentNode.parentNode.children[2]["attribs"]["href"]) {
+            aotyUrl = "https://www.albumoftheyear.org" + $$(".artistTitle")[0].parentNode.parentNode.children[2]["attribs"]["href"];
+          }
+        }
+        if (ArtistList2.length > 1) {
+          let ArtistSimArray = [];
+          for (let h = 0; h < ArtistList2.length; h++) {
+            let i = ArtistList2.length - (h + 1);
+            if (i !== 0) {
+              SimToArtistJSON2 += `"${similarity(ArtistList2[i], artist)}": "${ArtistList2[i]}",
+`;
+              ArtistToUrlJSON2 += `"${ArtistList2[i]}": "${$$(".artistTitle")[i].parentNode.parentNode.children[2]["attribs"]["href"]}",
+`;
+              ArtistToSimJSON2 += `"${ArtistList2[i]}": "${similarity(
+                ArtistList2[i],
+                artist
+              )}",
+`;
+              ArtistToAlbumJSON2 += `"${ArtistList2[i]}": ${AlbumList2[i]}
+`;
+              ArtistSimArray.push(similarity(ArtistList2[i], artist));
+              AlbumToUrlJSON2 += `"${AlbumList2[i].replaceAll('"', '\\"')}": "${$$(".artistTitle")[i].parentNode.parentNode.children[2]["attribs"]["href"]}",
+`;
+            }
+            if (i == 0) {
+              SimToArtistJSON2 += `"${similarity(ArtistList2[i], artist)}": "${ArtistList2[i]}"
+}`;
+              ArtistToUrlJSON2 += `"${ArtistList2[i]}": "${$$(".artistTitle")[i].parentNode.parentNode.children[2]["attribs"]["href"]}"
+}`;
+              ArtistToSimJSON2 += `"${ArtistList2[i]}": "${similarity(
+                ArtistList2[i],
+                artist
+              )}"
+}`;
+              ArtistToAlbumJSON2 += `"${ArtistList2[i]}": ${AlbumList2[i]}`;
+              AlbumToUrlJSON2 += `"${AlbumList2[i].replaceAll('"', '\\"')}": "${$$(".artistTitle")[i].parentNode.parentNode.children[2]["attribs"]["href"]}"
+}`;
+              ArtistSimArray.push(similarity(ArtistList2[i], artist));
+            }
+          }
+          let DupeAristArray = [];
+          let DupeArtistSimArr = [];
+          let MostSimArtist = JSON.parse(SimToArtistJSON2)[ArtistSimArray.reduce((a, b) => Math.max(a, b), -Infinity)];
+          var lines = ArtistToAlbumJSON2.split("\n");
+          if (countInstances(ArtistToUrlJSON2, MostSimArtist) > 1) {
+            for (let h = 0; h < lines.length; h++) {
+              let line = lines[h];
+              if (line.indexOf(`"${MostSimArtist}":`) != -1) {
+                DupeAristArray.push(line.split(`"${MostSimArtist}": `)[1]);
+              }
+            }
+          }
+          if (DupeAristArray.length > 1) {
+            for (let a = 0; a < DupeAristArray.length; a++) {
+              if (a !== DupeAristArray.length - 1) {
+                SimToAlbumJSON2 += `"${similarity(DupeAristArray[a], album)}": "${DupeAristArray[a].replaceAll('"', '\\"')}",
+`;
+              }
+              if (a == DupeAristArray.length - 1) {
+                SimToAlbumJSON2 += `"${similarity(DupeAristArray[a], album)}": "${DupeAristArray[a].replaceAll('"', '\\"')}"
+}`;
+              }
+              DupeArtistSimArr.push(similarity(DupeAristArray[a], album));
+            }
+          }
+          if (DupeAristArray.length >= 1) {
+            let MostSimAlbum = JSON.parse(SimToAlbumJSON2)[DupeArtistSimArr.reduce((a, b) => Math.max(a, b), -Infinity)];
+            aotyUrl = "https://www.albumoftheyear.org" + JSON.parse(AlbumToUrlJSON2)[MostSimAlbum];
+          }
+          if (DupeAristArray.length < 1) {
+            if (JSON.parse(ArtistToSimJSON2)[MostSimArtist] > 0.3) {
+              aotyUrl = "https://www.albumoftheyear.org" + JSON.parse(ArtistToUrlJSON2)[MostSimArtist];
+            }
+          }
+        }
+        if (aotyUrl == "https://www.albumoftheyear.orgundefined" && res.status == 200) {
           sleep(2e3);
           Spicetify.showNotification(`No release found.`);
         }
@@ -13350,11 +13564,16 @@ var aoty = (() => {
       return;
     prevTrack = id;
     try {
-      album_title = album_title.split(" -")[0];
-      album_title = album_title.split(" (")[0];
-      album_title = album_title.replace('"', "");
+      if (artist_name !== "Weezer") {
+        album_title = album_title.split(" -")[0];
+        album_title = album_title.split(" (")[0];
+        album_title = album_title.replace('"', "");
+      }
       if (artist_name == "Ms. Lauryn Hill") {
         artist_name = "Lauryn Hill";
+      }
+      if (artist_name == "R\xDCF\xDCS DU SOL") {
+        artist_name = "R\xDCF\xDCS";
       }
       const rating = await getPageLink(artist_name, album_title);
       if (document.getElementsByClassName("scoreElement").length >= 1) {
@@ -13402,6 +13621,10 @@ var aoty = (() => {
           songRating.style.fontWeight = "bold";
           let ratingTitle = rating[7][Number(album_disc_number) - 1].split("&")[Number(album_track_number) - 1];
           songRating.title = ratingTitle;
+          songTitle = songTitleBox.children[0];
+          if (songScore >= 90 && ratingTitle.split("Ratings")[0] >= 25) {
+            songTitle.style.fontWeight = "bold";
+          }
           songTitleBox.appendChild(songRating);
         }
       }
