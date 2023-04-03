@@ -1,6 +1,6 @@
 // @ts-nocheck
 
-// If anyone is reading this on the Github the reason his file has over 270 lines of comments
+// If anyone is reading this on the Github the reason his file has over 100 lines of comments
 // is because I do not remember all of stuff that I code so I just wrote small things to explain it to myself
 // if I cannot remember. So if you are reading the comments to actually find out what some of the code
 // does don't expect the best explanations, they are basically just poorly written reminders for myself
