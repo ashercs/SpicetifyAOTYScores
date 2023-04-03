@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 // If anyone is reading this on the Github the reason his file has over 270 lines of comments
 // is because I do not remember all of stuff that I code so I just wrote small things to explain it to myself
 // if I cannot remember. So if you are reading the comments to actually find out what some of the code
@@ -160,22 +162,26 @@ export class ApiError extends Error {
 }
 
 // Function for fetching aoty URL from album/artist name then parsing the data.
-async function getPageLink(artist: string, album: string, firstiteration: boolean) {
+async function getPageLink(
+  artist: string,
+  album: string,
+  firstiteration: boolean
+) {
   let song = artist + " " + album;
   // This was changed to just AOTY's search due to duckduckgo being quite inaccurate.
-  let url = "https://www.albumoftheyear.orgundefined"
+  let url = "https://www.albumoftheyear.orgundefined";
 
   // Changed so if it already tried searching for a release but couldn't find one it will
   // just search the album name and get the most similar one.
   if (firstiteration == true) {
-  url = `https://www.albumoftheyear.org/search/albums/?q=${encodeURIComponent(
-    song
-  )}`;
-  }
-  if (firstiteration == false){
     url = `https://www.albumoftheyear.org/search/albums/?q=${encodeURIComponent(
-    album
-  )}`;
+      song
+    )}`;
+  }
+  if (firstiteration == false) {
+    url = `https://www.albumoftheyear.org/search/albums/?q=${encodeURIComponent(
+      album
+    )}`;
   }
   console.log(url);
 
@@ -375,12 +381,6 @@ async function getPageLink(artist: string, album: string, firstiteration: boolea
       }
     }
   }
-  // Old method to get the URL:
-  // let aotyUrl: any =
-  //   "https://www.albumoftheyear.org" +
-  //   $$(
-  //     "#centerContent > div > div:nth-child(3) > div:nth-child(2) > a:nth-child(3)"
-  //   ).attr("href");
 
   // If no URL was able to be obtained.
   if (aotyUrl == "https://www.albumoftheyear.orgundefined") {
@@ -398,22 +398,9 @@ async function getPageLink(artist: string, album: string, firstiteration: boolea
       Spicetify.showNotification(
         `No release found on AOTY, searching just the album title without artist name (may return inaccurate results)`
       );
-      getPageLink(artist, album, false)
-      }
-      if (
-        aotyUrl == "https://www.albumoftheyear.orgundefined" &&
-        res.status == 200
-      ) {
-        sleep(2000);
-        Spicetify.showNotification(`No release found.`);
-        //   Spicetify.showNotification(`No release found on AOTY, searching with DuckDuckGo (may return inaccurate results)`);
-        //   const ddgurl = `https://duckduckgo.com/?q=%5Csite%3Aalbumoftheyear.org%2Falbum%2F%20${encodeURIComponent(album)}%20%2B-reviews`;
-        //   const ddgres = await fetch(ddgurl);
-        //   const reg = /\?uddg=(.*?)&rut=/;
-        //   console.log(decodeURIComponent(ddgres.body.match(reg)[1]))
-        //   aotyUrl = decodeURIComponent(ddgres.body.match(reg)[1]);
-        //   console.log('hello')
-      }
+      // clearRating()
+      // getPageLink(artist, album, false);
+      return "no"
     }
   }
   console.log(aotyUrl);
@@ -629,7 +616,6 @@ async function refreshrequest() {
   // Run the main script.
   update;
 }
-
 async function update() {
   // Check if there is a track playing
   if (!Player.data.playback_id || !Player.data?.track?.metadata) return;
@@ -683,12 +669,9 @@ async function update() {
     album_disc_number,
   } = Player.data.track.metadata;
 
-  // In case the track has missing metadata.
+  // Detect if no track is playing
   if (!title || !album_title || !artist_name) return;
 
-  // Making sure to not hit AOTY's rate limit.
-  // let now = Date.now();
-  // if (prevRequest && now - prevRequest < RATE_LIMIT) return;
   prevTrack = id;
 
   try {
@@ -715,9 +698,13 @@ async function update() {
     // Getting the information to search, the format is Artist Album.
     // Example would be "Marvin Gaye What's Going On"
     // Running the function to get the URL and parse it for information with the release.
-    const rating: any = await getPageLink(artist_name, album_title, true);
-
-    // Making sure no duplicate rating glitch.
+    let rating: any = await getPageLink(artist_name, album_title, true);
+    if (!rating[3]){
+    if (rating == "no"){
+      rating = await getPageLink(artist_name, album_title, false);
+    }
+  }
+    // Making sure there are no duplicate ratings since this was an issue before.
     if (document.getElementsByClassName("scoreElement").length >= 1) {
       for (
         let i = 0;
@@ -794,14 +781,14 @@ async function update() {
           "/song"
         )[Number(album_track_number)];
         songRating.href = "https://albumoftheyear.org/song" + trackUrl;
+
         // Styling.
         songRating.style.fontSize = "10px";
         songRating.style.fontWeight = "bold";
 
         // Adding hover text that displays the amount of users that have rated the track.
         // Works the same way as the songScoreList talked about earlier.
-        // Example for rating[7] (Track rating count) would be:
-        //
+
         let ratingTitle =
           rating[7][Number(album_disc_number) - 1].split("&")[
             Number(album_track_number) - 1
