@@ -1,6 +1,6 @@
 // @ts-nocheck
 
-// If anyone is reading this on the Github the reason his file has over 100 lines of comments
+// If anyone is reading this on the Github the reason his file has over 150 lines of comments
 // is because I do not remember all of stuff that I code so I just wrote small things to explain it to myself
 // if I cannot remember. So if you are reading the comments to actually find out what some of the code
 // does don't expect the best explanations, they are basically just poorly written reminders for myself
@@ -400,7 +400,7 @@ async function getPageLink(
       );
       // clearRating()
       // getPageLink(artist, album, false);
-      return "no"
+      return "no";
     }
   }
   console.log(aotyUrl);
@@ -699,11 +699,11 @@ async function update() {
     // Example would be "Marvin Gaye What's Going On"
     // Running the function to get the URL and parse it for information with the release.
     let rating: any = await getPageLink(artist_name, album_title, true);
-    if (!rating[3]){
-    if (rating == "no"){
-      rating = await getPageLink(artist_name, album_title, false);
+    if (!rating[3]) {
+      if (rating == "no") {
+        rating = await getPageLink(artist_name, album_title, false);
+      }
     }
-  }
     // Making sure there are no duplicate ratings since this was an issue before.
     if (document.getElementsByClassName("scoreElement").length >= 1) {
       for (
