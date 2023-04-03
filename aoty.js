@@ -13180,11 +13180,19 @@ var aoty = (() => {
       super(message);
     }
   };
-  async function getPageLink(artist, album) {
+  async function getPageLink(artist, album, firstiteration) {
     let song = artist + " " + album;
-    const url = `https://www.albumoftheyear.org/search/albums/?q=${encodeURIComponent(
-      song
-    )}`;
+    let url = "https://www.albumoftheyear.orgundefined";
+    if (firstiteration == true) {
+      url = `https://www.albumoftheyear.org/search/albums/?q=${encodeURIComponent(
+        song
+      )}`;
+    }
+    if (firstiteration == false) {
+      url = `https://www.albumoftheyear.org/search/albums/?q=${encodeURIComponent(
+        album
+      )}`;
+    }
     console.log(url);
     const res = await fetch2(url);
     console.log(res);
@@ -13282,109 +13290,13 @@ var aoty = (() => {
       if (res.status == 500) {
         sleep(3e3);
         Spicetify.showNotification(`Request failed, retrying.`);
-        getPageLink(artist, album);
+        getPageLink(artist, album, true);
       }
       if (res.status == 200) {
         Spicetify.showNotification(
           `No release found on AOTY, searching just the album title without artist name (may return inaccurate results)`
         );
-        const url2 = `https://www.albumoftheyear.org/search/albums/?q=${encodeURIComponent(
-          album
-        )}`;
-        let res22 = await fetch2(url2);
-        $$ = esm_default2.load(res22.body);
-        let SimToArtistJSON2 = "{\n";
-        let ArtistToUrlJSON2 = "{\n";
-        let ArtistToSimJSON2 = "{\n";
-        let ArtistToAlbumJSON2 = "{\n";
-        let SimToAlbumJSON2 = "{\n";
-        let AlbumToUrlJSON2 = "{\n";
-        let ArtistList2 = [];
-        let AlbumList2 = [];
-        for (let i = 0; i < $$(".artistTitle").length; i++) {
-          ArtistList2.push($$(".artistTitle")[i].children[0].data);
-          AlbumList2.push($$(".albumTitle")[i].children[0].data);
-        }
-        if (ArtistList2.length == 1) {
-          if ($$(".artistTitle")[0].parentNode.parentNode.children[2]["attribs"]["href"]) {
-            aotyUrl = "https://www.albumoftheyear.org" + $$(".artistTitle")[0].parentNode.parentNode.children[2]["attribs"]["href"];
-          }
-        }
-        if (ArtistList2.length > 1) {
-          let ArtistSimArray = [];
-          for (let h = 0; h < ArtistList2.length; h++) {
-            let i = ArtistList2.length - (h + 1);
-            if (i !== 0) {
-              SimToArtistJSON2 += `"${similarity(ArtistList2[i], artist)}": "${ArtistList2[i]}",
-`;
-              ArtistToUrlJSON2 += `"${ArtistList2[i]}": "${$$(".artistTitle")[i].parentNode.parentNode.children[2]["attribs"]["href"]}",
-`;
-              ArtistToSimJSON2 += `"${ArtistList2[i]}": "${similarity(
-                ArtistList2[i],
-                artist
-              )}",
-`;
-              ArtistToAlbumJSON2 += `"${ArtistList2[i]}": ${AlbumList2[i]}
-`;
-              ArtistSimArray.push(similarity(ArtistList2[i], artist));
-              AlbumToUrlJSON2 += `"${AlbumList2[i].replaceAll('"', '\\"')}": "${$$(".artistTitle")[i].parentNode.parentNode.children[2]["attribs"]["href"]}",
-`;
-            }
-            if (i == 0) {
-              SimToArtistJSON2 += `"${similarity(ArtistList2[i], artist)}": "${ArtistList2[i]}"
-}`;
-              ArtistToUrlJSON2 += `"${ArtistList2[i]}": "${$$(".artistTitle")[i].parentNode.parentNode.children[2]["attribs"]["href"]}"
-}`;
-              ArtistToSimJSON2 += `"${ArtistList2[i]}": "${similarity(
-                ArtistList2[i],
-                artist
-              )}"
-}`;
-              ArtistToAlbumJSON2 += `"${ArtistList2[i]}": ${AlbumList2[i]}`;
-              AlbumToUrlJSON2 += `"${AlbumList2[i].replaceAll('"', '\\"')}": "${$$(".artistTitle")[i].parentNode.parentNode.children[2]["attribs"]["href"]}"
-}`;
-              ArtistSimArray.push(similarity(ArtistList2[i], artist));
-            }
-          }
-          let DupeAristArray = [];
-          let DupeArtistSimArr = [];
-          let MostSimArtist = JSON.parse(SimToArtistJSON2)[ArtistSimArray.reduce((a, b) => Math.max(a, b), -Infinity)];
-          var lines = ArtistToAlbumJSON2.split("\n");
-          if (countInstances(ArtistToUrlJSON2, MostSimArtist) > 1) {
-            for (let h = 0; h < lines.length; h++) {
-              let line = lines[h];
-              if (line.indexOf(`"${MostSimArtist}":`) != -1) {
-                DupeAristArray.push(line.split(`"${MostSimArtist}": `)[1]);
-              }
-            }
-          }
-          if (DupeAristArray.length > 1) {
-            for (let a = 0; a < DupeAristArray.length; a++) {
-              if (a !== DupeAristArray.length - 1) {
-                SimToAlbumJSON2 += `"${similarity(DupeAristArray[a], album)}": "${DupeAristArray[a].replaceAll('"', '\\"')}",
-`;
-              }
-              if (a == DupeAristArray.length - 1) {
-                SimToAlbumJSON2 += `"${similarity(DupeAristArray[a], album)}": "${DupeAristArray[a].replaceAll('"', '\\"')}"
-}`;
-              }
-              DupeArtistSimArr.push(similarity(DupeAristArray[a], album));
-            }
-          }
-          if (DupeAristArray.length >= 1) {
-            let MostSimAlbum = JSON.parse(SimToAlbumJSON2)[DupeArtistSimArr.reduce((a, b) => Math.max(a, b), -Infinity)];
-            aotyUrl = "https://www.albumoftheyear.org" + JSON.parse(AlbumToUrlJSON2)[MostSimAlbum];
-          }
-          if (DupeAristArray.length < 1) {
-            if (JSON.parse(ArtistToSimJSON2)[MostSimArtist] > 0.3) {
-              aotyUrl = "https://www.albumoftheyear.org" + JSON.parse(ArtistToUrlJSON2)[MostSimArtist];
-            }
-          }
-        }
-        if (aotyUrl == "https://www.albumoftheyear.orgundefined" && res.status == 200) {
-          sleep(2e3);
-          Spicetify.showNotification(`No release found.`);
-        }
+        return "no";
       }
     }
     console.log(aotyUrl);
@@ -13575,7 +13487,12 @@ var aoty = (() => {
       if (artist_name == "R\xDCF\xDCS DU SOL") {
         artist_name = "R\xDCF\xDCS";
       }
-      const rating = await getPageLink(artist_name, album_title);
+      let rating = await getPageLink(artist_name, album_title, true);
+      if (!rating[3]) {
+        if (rating == "no") {
+          rating = await getPageLink(artist_name, album_title, false);
+        }
+      }
       if (document.getElementsByClassName("scoreElement").length >= 1) {
         for (let i = 0; i < document.getElementsByClassName("scoreElement").length; i++) {
           document.getElementsByClassName("scoreElement")[i].remove();
