@@ -389,7 +389,7 @@ async function getPageLink(
       // Wait 3 seconds and resend request.
       sleep(3000);
       Spicetify.showNotification(`Request failed, retrying.`);
-      getPageLink(artist, album, true);
+      return "noo";
     }
     if (res.status == 200) {
       // If the server did send a response but URL was still not able to be obtained.
@@ -409,7 +409,7 @@ async function getPageLink(
   // Parsing the HTML to find data to be used.
   const $ = cheerio.load(res2.body);
 
-  // Seeing the number of reviews an album has via CSS selector.
+  // Seeing the number of ratings an album has via CSS selector.
   let ratingcount = $(
     "#centerContent > div.fullWidth > div:nth-child(4) > div.albumUserScoreBox > div.text.numReviews > a > strong"
   ).text()!;
@@ -618,10 +618,11 @@ async function refreshrequest() {
 }
 async function update() {
   // Check if there is a track playing
-  if (!Player.data.playback_id || !Player.data?.track?.metadata) return;
+
+  if (!Spicetify.Player.data.playbackId || !Spicetify.Player.data?.track?.metadata) return;
 
   // Check to see if you are replaying the same track.
-  const id = Player.data.playback_id;
+  const id = Spicetify.Player.data.track;
 
   // Fix to make it not spam #2.
   if (id == prevTrack && isRefreshing == "False") return;
@@ -629,22 +630,23 @@ async function update() {
 
   // Check #2 if there is a track playing, infoContainer is also used later to add the album rating text.
   // Also fix for extension not working if friends tab is closed.
+  // if (
+  //   document.querySelector(
+  //     "#main > div > div.Root__top-container.Root__top-container--right-sidebar-visible > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-trackInfo-container"
+  //   )
+  // ) {
+  //   infoContainer = document.querySelector(
+  //     "#main > div > div.Root__top-container.Root__top-container--right-sidebar-visible > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-trackInfo-container"
+  //   );
+  // }
   if (
     document.querySelector(
-      "#main > div > div.Root__top-container.Root__top-container--right-sidebar-visible > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-trackInfo-container"
+      "#main > div > div.Root__top-container > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-nowPlayingWidget-trackInfo.main-trackInfo-container"
     )
   ) {
+    // console.log('infocontainer found')
     infoContainer = document.querySelector(
-      "#main > div > div.Root__top-container.Root__top-container--right-sidebar-visible > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-trackInfo-container"
-    );
-  }
-  if (
-    document.querySelector(
-      "#main > div > div.Root__top-container > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-trackInfo-container"
-    )
-  ) {
-    infoContainer = document.querySelector(
-      "#main > div > div.Root__top-container > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-trackInfo-container"
+      "#main > div > div.Root__top-container > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-nowPlayingWidget-trackInfo.main-trackInfo-container"
     );
   }
   if (!infoContainer) return;
@@ -667,7 +669,7 @@ async function update() {
     artist_name,
     album_track_number,
     album_disc_number,
-  } = Player.data.track.metadata;
+  } = Spicetify.Player.data.track.metadata;
 
   // Detect if no track is playing
   if (!title || !album_title || !artist_name) return;
@@ -702,6 +704,9 @@ async function update() {
     if (!rating[3]) {
       if (rating == "no") {
         rating = await getPageLink(artist_name, album_title, false);
+      }
+      if (rating == "noo"){
+        getPageLink(artist, album, true);
       }
     }
     // Making sure there are no duplicate ratings since this was an issue before.
@@ -856,6 +861,6 @@ export default async function main() {
   while (!Spicetify.CosmosAsync || !Spicetify.showNotification)
     await sleep(500);
   // Run the main function if the song has changed or progress on a song is made.
-  Player.addEventListener("onprogress", update);
+  // Player.addEventListener("onprogress", update);
   Player.addEventListener("songchange", update);
 }
