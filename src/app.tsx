@@ -48,12 +48,16 @@ function countInstances(string: string, word: string) {
 // Clearing the displayed ratings.
 function clearRating() {
   if (infoContainer && ratingContainer) {
+    console.log("clearing");
     try {
       if (songTitleBox) {
-        songTitleBox.removeChild(songRating);
+        const songScore = document.querySelectorAll(".songScore");
+        songScore.forEach((element) => element.remove());
         songTitleBox.children[0].style.fontWeight = 400;
       }
-      infoContainer.removeChild(ratingContainer);
+
+      const scoreElements = document.querySelectorAll(".scoreElement");
+      scoreElements.forEach((element) => element.remove());
 
       // Fix for duplicate scores.
       for (
@@ -122,31 +126,20 @@ function editDistance(s1: any, s2: any) {
 function isNumeric(value: any) {
   return /^-?\d+$/.test(value);
 }
-
+// Importing axios for requests.
+import axios from "axios";
 // Fetch function.
 export async function fetch(url: string) {
-  const cosmosReq = () =>
-    new Promise<string>((resolve, reject) => {
-      const request = JSON.stringify({
-        method: "GET",
-        uri: url,
-        headers: {
-          "user-agent": "Mozilla/5.0",
-          "User-Agent": "Mozilla/5.0",
-        },
-      });
-
-      (window as any).sendCosmosRequest({
-        request,
-        persistent: false,
-        onSuccess: resolve,
-        onFailure: reject,
-      });
-    });
-
-  const data = await cosmosReq();
-
-  return JSON.parse(data);
+  // Fetching the URL with a proxy to avoid CORS issues.
+  const response = await axios.get(
+    "https://proxy.life23243.workers.dev/?" + url,
+    {
+      headers: {
+        "User-Agent": "Mozilla/5.0",
+      },
+    }
+  );
+  return response;
 }
 
 // Sleep function
@@ -188,7 +181,7 @@ async function getPageLink(
   const res = await fetch(url);
   console.log(res);
 
-  let $$ = cheerio.load(res.body);
+  let $$ = cheerio.load(res.data);
 
   // If this URL is not changed it will know there has been an error
   let aotyUrl = "https://www.albumoftheyear.orgundefined";
@@ -210,12 +203,39 @@ async function getPageLink(
   let AlbumList = [];
 
   // Loop for the amount of albums there are on the page, adds all artist and album names on the page to an array.
-  for (let i = 0; i < $$(".artistTitle").length; i++) {
+  for (let i = 0; i < $$("div.artistTitle").length; i++) {
     ArtistList.push($$(".artistTitle")[i].children[0].data);
     AlbumList.push($$(".albumTitle")[i].children[0].data);
   }
+  const classNames = new Set();
+
+  // Iterate over all elements with a class attribute
+  $$("*[class]").each((index, element) => {
+    // Get the class attribute
+    const classList = $$(element).attr("class");
+
+    // Split the classList into individual class names
+    const classes = classList.split(/\s+/);
+
+    // Add each class name to the Set
+    classes.forEach((className) => classNames.add(className));
+  });
+
+  // Convert the Set to an array and print the class names
+  console.log("Class names found in the HTML:");
+  console.log([...classNames].join(", "));
+
+  /* $$(".artistTitle").each((index, element) => {
+    // Get the text content of the element
+    const artistName = $(element).text();
+    ArtistList.push($$(element).children[0].data);
+
+    // Log the artist name
+    console.log(`Artist ${index + 1}: ${artistName}`);
+  }); */
 
   // If there is just one result it will just pick that and ignore the other steps.
+  console.log(ArtistList);
   if (ArtistList.length == 1) {
     if (
       $$(".artistTitle")[0].parentNode.parentNode.children[2]["attribs"]["href"]
@@ -402,12 +422,17 @@ async function getPageLink(
       // getPageLink(artist, album, false);
       return "no";
     }
+    if (res.status == 429) {
+      sleep(3000);
+      Spicetify.showNotification(`Request failed, retrying.`);
+      return "noo";
+    }
   }
   console.log(aotyUrl);
   let res2 = await fetch(aotyUrl);
 
   // Parsing the HTML to find data to be used.
-  const $ = cheerio.load(res2.body);
+  const $ = cheerio.load(res2.data);
 
   // Seeing the number of ratings an album has via CSS selector.
   let ratingcount = $(
@@ -614,20 +639,21 @@ async function refreshrequest() {
   prevRequest = Date.now();
 
   // Run the main script.
-  update;
+  console.log("refreshing");
+  update();
 }
 async function update() {
+  console.log("update");
   // Check if there is a track playing
-
-  if (!Spicetify.Player.data.playbackId || !Spicetify.Player.data?.track?.metadata) return;
-
+  if (!Spicetify.Player.data.playbackId && !Spicetify.Player.data.playback_id)
+    return;
   // Check to see if you are replaying the same track.
-  const id = Spicetify.Player.data.track;
+  const id =
+    Spicetify.Player.data.playbackId ?? Spicetify.Player.data.playback_id;
 
   // Fix to make it not spam #2.
   if (id == prevTrack && isRefreshing == "False") return;
   isRefreshing = "False";
-
   // Check #2 if there is a track playing, infoContainer is also used later to add the album rating text.
   // Also fix for extension not working if friends tab is closed.
   // if (
@@ -647,6 +673,14 @@ async function update() {
     // console.log('infocontainer found')
     infoContainer = document.querySelector(
       "#main > div > div.Root__top-container > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-nowPlayingWidget-trackInfo.main-trackInfo-container"
+    );
+  } else if (
+    document.querySelector(
+      "#main > div > div.Root__top-container > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-trackInfo-container.ellipsis-one-line"
+    )
+  ) {
+    infoContainer = document.querySelector(
+      "#main > div > div.Root__top-container > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-trackInfo-container.ellipsis-one-line"
     );
   }
   if (!infoContainer) return;
@@ -669,7 +703,9 @@ async function update() {
     artist_name,
     album_track_number,
     album_disc_number,
-  } = Spicetify.Player.data.track.metadata;
+  } =
+    Spicetify.Player.data.item?.metadata ??
+    Spicetify.Player.data.track?.metadata;
 
   // Detect if no track is playing
   if (!title || !album_title || !artist_name) return;
@@ -705,7 +741,7 @@ async function update() {
       if (rating == "no") {
         rating = await getPageLink(artist_name, album_title, false);
       }
-      if (rating == "noo"){
+      if (rating == "noo") {
         getPageLink(artist, album, true);
       }
     }
@@ -743,6 +779,15 @@ async function update() {
       ) {
         songTitleBox = document.querySelector(
           "#main > div > div.Root__top-container > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-trackInfo-container > div.main-trackInfo-name > div > div > div > div > span"
+        );
+      }
+      if (
+        document.querySelector(
+          "#main > div > div.Root__top-container > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-trackInfo-container.ellipsis-one-line > div.main-trackInfo-name.ellipsis-one-line.main-type-mesto > span"
+        )
+      ) {
+        songTitleBox = document.querySelector(
+          "#main > div > div.Root__top-container > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-trackInfo-container.ellipsis-one-line > div.main-trackInfo-name.ellipsis-one-line.main-type-mesto > span"
         );
       }
       // If the song has a title.
@@ -812,8 +857,11 @@ async function update() {
     }
 
     // Creating the element with the album score that goes under the artist name.
+    divContainer = document.createElement("div");
+    divContainer.style.gridArea = "rating";
     ratingContainer = document.createElement("a");
-    ratingContainer.className = "scoreElement";
+    divContainer.appendChild(ratingContainer);
+    divContainer.className = "scoreElement";
 
     // Album score just like track score changes color based on the rating.
     if (rating[0] >= 69.5) {
@@ -841,11 +889,14 @@ async function update() {
     ratingContainer.href = String(rating[2]);
 
     // Styling.
-    ratingContainer.style.fontSize = "11px";
-    ratingContainer.style.fontWeight = "bold";
+    ratingContainer.style.fontSize = "12px";
+    //ratingContainer.style.fontWeight = "bold";
 
     // Adding the element to the track info area.
-    infoContainer.appendChild(ratingContainer);
+    // Fix the grid container (genre included to allow for compatibility with spotify-genres)
+    infoContainer.style.gridTemplate =
+      '"title title" "badges subtitle" "genres genres" "rating rating" / auto 1fr auto auto';
+    infoContainer.appendChild(divContainer);
   } catch (e: any) {
     // Checking for errors.
     if (e instanceof ApiError) {
@@ -860,6 +911,7 @@ async function update() {
 export default async function main() {
   while (!Spicetify.CosmosAsync || !Spicetify.showNotification)
     await sleep(500);
+  update();
   // Run the main function if the song has changed or progress on a song is made.
   // Player.addEventListener("onprogress", update);
   Player.addEventListener("songchange", update);
