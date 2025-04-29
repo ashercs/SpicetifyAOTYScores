@@ -6,7 +6,7 @@
 // does don't expect the best explanations, they are basically just poorly written reminders for myself
 
 // Import module for parsing HTML
-import cheerio from "cheerio";
+import * as cheerio from "cheerio";
 
 // Setup.
 const { Player } = Spicetify;
@@ -645,6 +645,8 @@ async function refreshrequest() {
 async function update() {
   console.log("update");
   // Check if there is a track playing
+  console.log(`playback id: ${Spicetify.Player.data.playbackId}`)
+  console.log(`playback id: ${Spicetify.Player.data.playback_id}`)
   if (!Spicetify.Player.data.playbackId && !Spicetify.Player.data.playback_id)
     return;
   // Check to see if you are replaying the same track.
@@ -683,6 +685,7 @@ async function update() {
       "#main > div > div.Root__top-container > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-trackInfo-container.ellipsis-one-line"
     );
   }
+  console.log(infoContainer)
   if (!infoContainer) return;
   clearRating();
 
@@ -763,6 +766,7 @@ async function update() {
       // There is currently an issue where if a track title is too long it won't show.
       // Working on a fix, I will not put the score before the track title since it looks weird.
       // Also fix #2 for glitch causing extension to not work with friends tab open.
+      
       if (
         document.querySelector(
           "#main > div > div.Root__top-container.Root__top-container--right-sidebar-visible > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-trackInfo-container > div.main-trackInfo-name > div > div > div > div > span"
@@ -788,6 +792,15 @@ async function update() {
       ) {
         songTitleBox = document.querySelector(
           "#main > div > div.Root__top-container > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-trackInfo-container.ellipsis-one-line > div.main-trackInfo-name.ellipsis-one-line.main-type-mesto > span"
+        );
+      }
+      if (
+        document.querySelector(
+          "#main > div > div.Root__top-container > div.Root__now-playing-bar > footer > div.main-nowPlayingBar-nowPlayingBar > div.main-nowPlayingBar-left > div > div.main-nowPlayingWidget-trackInfo.main-trackInfo-container > div.main-trackInfo-name > div > span > span > div > span > a"
+        )
+      ) {
+        songTitleBox = document.querySelector(
+          "#main > div > div.Root__top-container > div.Root__now-playing-bar > footer > div.main-nowPlayingBar-nowPlayingBar > div.main-nowPlayingBar-left > div > div.main-nowPlayingWidget-trackInfo.main-trackInfo-container > div.main-trackInfo-name > div > span > span > div > span > a"
         );
       }
       // If the song has a title.
@@ -847,9 +860,10 @@ async function update() {
 
         songTitle = songTitleBox.children[0];
 
-        if (songScore >= 90 && ratingTitle.split("Ratings")[0] >= 25) {
-          songTitle.style.fontWeight = "bold";
-        }
+        // currently broken
+        // if (songScore >= 90 && ratingTitle.split("Ratings")[0] >= 25) {
+        //   songTitle.style.fontWeight = "bold";
+        // }
 
         // Adding this element to the same area the track title is.
         songTitleBox.appendChild(songRating);
