@@ -76,7 +76,7 @@ function clearRating() {
           document.getElementsByClassName("songScore")[i].remove();
         }
       }
-    } catch (e) {}
+    } catch (e) { }
   }
 }
 
@@ -160,6 +160,9 @@ async function getPageLink(
   album: string,
   firstiteration: boolean
 ) {
+  if (album == "Sign O The Times") {
+    album = 'Sign "\u262E" the Times'
+  }
   let song = artist + " " + album;
   // This was changed to just AOTY's search due to duckduckgo being quite inaccurate.
   let url = "https://www.albumoftheyear.orgundefined";
@@ -204,7 +207,7 @@ async function getPageLink(
 
   // Loop for the amount of albums there are on the page, adds all artist and album names on the page to an array.
   for (let i = 0; i < $$("div.artistTitle").length; i++) {
-    ArtistList.push($$(".artistTitle")[i].children[0].data);
+    ArtistList.push($$(".artistTitle")[i]?.children[0].data);
     AlbumList.push($$(".albumTitle")[i].children[0].data);
   }
   const classNames = new Set();
@@ -225,25 +228,16 @@ async function getPageLink(
   console.log("Class names found in the HTML:");
   console.log([...classNames].join(", "));
 
-  /* $$(".artistTitle").each((index, element) => {
-    // Get the text content of the element
-    const artistName = $(element).text();
-    ArtistList.push($$(element).children[0].data);
-
-    // Log the artist name
-    console.log(`Artist ${index + 1}: ${artistName}`);
-  }); */
-
   // If there is just one result it will just pick that and ignore the other steps.
   console.log(ArtistList);
   if (ArtistList.length == 1) {
     if (
-      $$(".artistTitle")[0].parentNode.parentNode.children[2]["attribs"]["href"]
+      $$(".artistTitle")[0].parentNode.parentNode?.children[2]?.["attribs"]["href"]
     ) {
       aotyUrl =
         "https://www.albumoftheyear.org" +
-        $$(".artistTitle")[0].parentNode.parentNode.children[2]["attribs"][
-          "href"
+        $$(".artistTitle")[0].parentNode.parentNode?.children[2]?.["attribs"][
+        "href"
         ];
     }
   }
@@ -264,17 +258,25 @@ async function getPageLink(
       if (i !== 0) {
         // JSON that has similarities and artist names. Example:
         // "0.43": "Frank Ocean"
-        SimToArtistJSON += `"${similarity(ArtistList[i], artist)}": "${
-          ArtistList[i]
-        }",\n`;
+        SimToArtistJSON += `"${similarity(ArtistList[i], artist)}": "${ArtistList[i]
+          }",\n`;
 
         // JSON that has artist names and album URLs. Example:
         // "King Crimson": "https://www.albumoftheyear.org/album/5929-king-crimson-in-the-court-of-the-crimson-king.php"
-        ArtistToUrlJSON += `"${ArtistList[i]}": "${
-          $$(".artistTitle")[i].parentNode.parentNode.children[2]["attribs"][
+
+        if ($$(".artistTitle")[i]?.parentNode?.children[2]?.["attribs"]["href"] != undefined) {
+          ArtistToUrlJSON += `"${ArtistList[i]}": "${$$(".artistTitle")[i]?.parentNode.parentNode?.children[2]?.["attribs"][
             "href"
-          ]
-        }",\n`;
+            ]
+            }",\n`;
+        }
+
+        if ($$(".artistTitle")[i]?.parentNode.parentNode?.children[2]?.["attribs"]["href"] != undefined) {
+          ArtistToUrlJSON += `"${ArtistList[i]}": "${$$(".artistTitle")[i]?.parentNode?.children[2]?.["attribs"][
+            "href"
+            ]
+            }",\n`;
+        }
 
         // JSON that has artist names and similarities. Example:
         // "Frank Ocean": "0.43"
@@ -293,40 +295,65 @@ async function getPageLink(
 
         // JSON that has album names and album URLs. Example:
         // "Songs In The Key Of Life": "https://www.albumoftheyear.org/album/5600-stevie-wonder-songs-in-the-key-of-life.php"
-        AlbumToUrlJSON += `"${AlbumList[i].replaceAll('"', '\\"')}": "${
-          $$(".artistTitle")[i].parentNode.parentNode.children[2]["attribs"][
+        if ($$(".artistTitle")[i]?.parentNode?.children[2]?.["attribs"]["href"] != undefined) {
+          AlbumToUrlJSON += `"${AlbumList[i].replaceAll('"', '\\"')}": "${$$(".artistTitle")[i]?.parentNode?.children[2]?.["attribs"][
             "href"
-          ]
-        }",\n`;
+            ]
+            }",\n`;
+        }
+
+        if ($$(".artistTitle")[i]?.parentNode.parentNode?.children[2]?.["attribs"]["href"] != undefined) {
+          AlbumToUrlJSON += `"${AlbumList[i].replaceAll('"', '\\"')}": "${$$(".artistTitle")[i]?.parentNode.parentNode?.children[2]?.["attribs"][
+            "href"
+            ]
+            }",\n`;
+        }
       }
 
       // If it is the last iteration.
       if (i == 0) {
         // All JSONs are the same as the previously mentioned ones, only difference is they don't end in
         // commas and there is a } at the end to make it a valid JSON.
-        SimToArtistJSON += `"${similarity(ArtistList[i], artist)}": "${
-          ArtistList[i]
-        }"\n}`;
-        ArtistToUrlJSON += `"${ArtistList[i]}": "${
-          $$(".artistTitle")[i].parentNode.parentNode.children[2]["attribs"][
+
+        SimToArtistJSON += `"${similarity(ArtistList[i], artist)}": "${ArtistList[i]
+          }"\n}`;
+        // come back and fix bug here
+        if ($$(".artistTitle")[i]?.parentNode?.children[2]?.["attribs"]["href"] != undefined) {
+          ArtistToUrlJSON += `"${ArtistList[i]}": "${$$(".artistTitle")[i]?.parentNode.parentNode?.children[2]?.["attribs"][
             "href"
-          ]
-        }"\n}`;
+            ]
+            }"\n}`;
+        }
+
+        if ($$(".artistTitle")[i]?.parentNode.parentNode?.children[2]?.["attribs"]["href"] != undefined) {
+          ArtistToUrlJSON += `"${ArtistList[i]}": "${$$(".artistTitle")[i]?.parentNode?.children[2]?.["attribs"][
+            "href"
+            ]
+            }"\n}`;
+        }
         ArtistToSimJSON += `"${ArtistList[i]}": "${similarity(
           ArtistList[i],
           artist
         )}"\n}`;
         ArtistToAlbumJSON += `"${ArtistList[i]}": ${AlbumList[i]}`;
-        AlbumToUrlJSON += `"${AlbumList[i].replaceAll('"', '\\"')}": "${
-          $$(".artistTitle")[i].parentNode.parentNode.children[2]["attribs"][
+        if ($$(".artistTitle")[i]?.parentNode?.children[2]?.["attribs"]["href"] != undefined) {
+          AlbumToUrlJSON += `"${AlbumList[i].replaceAll('"', '\\"')}": "${$$(".artistTitle")[i]?.parentNode?.children[2]?.["attribs"][
             "href"
-          ]
-        }"\n}`;
+            ]
+            }"\n}`;
+        }
+
+        if ($$(".artistTitle")[i]?.parentNode.parentNode?.children[2]?.["attribs"]["href"] != undefined) {
+          AlbumToUrlJSON += `"${AlbumList[i].replaceAll('"', '\\"')}": "${$$(".artistTitle")[i]?.parentNode.parentNode?.children[2]?.["attribs"][
+            "href"
+            ]
+            }"\n}`;
+        }
         ArtistSimArray.push(similarity(ArtistList[i], artist));
       }
     }
     // Arrays for in the case of dupe artists.
-    let DupeAristArray = [];
+    let DupeArtistArray = [];
     let DupeArtistSimArr = [];
 
     // Gets the highest value of similarity from the list then uses that to get the artist name
@@ -334,7 +361,7 @@ async function getPageLink(
     // the JSON would look like this "0.76": "Marvin Gaye" and then using the highest similarity it outputs the artist name.
     let MostSimArtist =
       JSON.parse(SimToArtistJSON)[
-        ArtistSimArray.reduce((a, b) => Math.max(a, b), -Infinity)
+      ArtistSimArray.reduce((a, b) => Math.max(a, b), -Infinity)
       ];
 
     // Splits the artist & album "JSON" by lines so it is easier to work with and to know how many times to loop.
@@ -349,50 +376,50 @@ async function getPageLink(
         // Checks if that line contains the most similar artist.
         if (line.indexOf(`"${MostSimArtist}":`) != -1) {
           // If it does it adds the album name to an array.
-          DupeAristArray.push(line.split(`"${MostSimArtist}": `)[1]);
+          DupeArtistArray.push(line.split(`"${MostSimArtist}": `)[1]);
         }
       }
     }
 
-    // If a singular artist has more than 1 song on the page.
-    if (DupeAristArray.length > 1) {
+    // If a singular artist has more than 1 album on the page.
+
+    if (DupeArtistArray.length >= 1) {
       // Loop for the amount of albums that artist has on the page.
-      for (let a = 0; a < DupeAristArray.length; a++) {
+      for (let a = 0; a < DupeArtistArray.length; a++) {
         // If it is not the last iteration
-        if (a !== DupeAristArray.length - 1) {
-          SimToAlbumJSON += `"${similarity(DupeAristArray[a], album)}": "${
+        if (a !== DupeArtistArray.length - 1) {
+          SimToAlbumJSON += `"${similarity(DupeArtistArray[a], album)}": "${
             // Replace quotation marks in album titles since this messes with the JSON.
-            DupeAristArray[a].replaceAll('"', '\\"')
-          }",\n`;
+            DupeArtistArray[a].replaceAll('"', '\\"')
+            }",\n`;
         }
         // If it is the last iteration.
-        if (a == DupeAristArray.length - 1) {
-          SimToAlbumJSON += `"${similarity(DupeAristArray[a], album)}": "${
+        if (a == DupeArtistArray.length - 1) {
+          SimToAlbumJSON += `"${similarity(DupeArtistArray[a], album)}": "${
             // Replace quotation marks in album titles since this messes with the JSON.
-            DupeAristArray[a].replaceAll('"', '\\"')
-          }"\n}`;
+            DupeArtistArray[a].replaceAll('"', '\\"')
+            }"\n}`;
         }
 
         // Add similarity of duplicate artist albums and album.
-        DupeArtistSimArr.push(similarity(DupeAristArray[a], album));
+        DupeArtistSimArr.push(similarity(DupeArtistArray[a], album));
       }
     }
 
-    if (DupeAristArray.length >= 1) {
+    if (DupeArtistArray.length >= 1) {
       // Most similar album of the multiple albums from one artist.
       let MostSimAlbum =
         JSON.parse(SimToAlbumJSON)[
-          DupeArtistSimArr.reduce((a, b) => Math.max(a, b), -Infinity)
+        DupeArtistSimArr.reduce((a, b) => Math.max(a, b), -Infinity)
         ];
-
       // Changes the URL.
       aotyUrl =
         "https://www.albumoftheyear.org" +
+        // MostSimAlbum
         JSON.parse(AlbumToUrlJSON)[MostSimAlbum];
     }
-
     // If the artist has only 1 album on the page.
-    if (DupeAristArray.length < 1) {
+    if (DupeArtistArray.length < 1) {
       // If the artist name is at least 30% similar.
       if (JSON.parse(ArtistToSimJSON)[MostSimArtist] > 0.3) {
         aotyUrl =
@@ -401,6 +428,7 @@ async function getPageLink(
       }
     }
   }
+
 
   // If no URL was able to be obtained.
   if (aotyUrl == "https://www.albumoftheyear.orgundefined") {
@@ -625,8 +653,7 @@ async function refreshrequest() {
   // If it has been less than 5 seconds since the last attempt at running this send notification and don't run the main function.
   if (now - prevRequest < RATE_LIMIT) {
     Spicetify.showNotification(
-      `You are on cooldown. Please wait ${
-        (RATE_LIMIT - (now - prevRequest)) / 1000
+      `You are on cooldown. Please wait ${(RATE_LIMIT - (now - prevRequest)) / 1000
       } seconds to avoid hitting the rate limit.`
     );
     return;
@@ -672,7 +699,6 @@ async function update() {
       "#main > div > div.Root__top-container > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-nowPlayingWidget-trackInfo.main-trackInfo-container"
     )
   ) {
-    // console.log('infocontainer found')
     infoContainer = document.querySelector(
       "#main > div > div.Root__top-container > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-nowPlayingWidget-trackInfo.main-trackInfo-container"
     );
@@ -725,6 +751,10 @@ async function update() {
       album_title = album_title.split(" (")[0];
       album_title = album_title.replace('"', "");
     }
+    console.log(album_title)
+    if (artist_name == "John Zorn" && album_title == "Electric Masada") {
+      artist_name = "Electric Masada"
+    }
 
     // Some artists have different names on Spotify than on AOTY
     // I haven't seen many examples but this is the main one I have noticed
@@ -734,6 +764,9 @@ async function update() {
     }
     if (artist_name == "RÜFÜS DU SOL") {
       artist_name = "RÜFÜS";
+    }
+    if (album_title == "Sign O' The Times") {
+      album_title = 'Sign "\u262E" the Times'
     }
 
     // Getting the information to search, the format is Artist Album.
@@ -766,7 +799,7 @@ async function update() {
       // There is currently an issue where if a track title is too long it won't show.
       // Working on a fix, I will not put the score before the track title since it looks weird.
       // Also fix #2 for glitch causing extension to not work with friends tab open.
-      
+
       if (
         document.querySelector(
           "#main > div > div.Root__top-container.Root__top-container--right-sidebar-visible > div.Root__now-playing-bar > footer > div > div.main-nowPlayingBar-left > div > div.main-trackInfo-container > div.main-trackInfo-name > div > div > div > div > span"
@@ -800,7 +833,7 @@ async function update() {
         )
       ) {
         songTitleBox = document.querySelector(
-          "#main > div > div.Root__top-container > div.Root__now-playing-bar > footer > div.main-nowPlayingBar-nowPlayingBar > div.main-nowPlayingBar-left > div > div.main-nowPlayingWidget-trackInfo.main-trackInfo-container > div.main-trackInfo-name > div > span > span > div > span > a"
+          "#main > div > div.Root__top-container > div.Root__now-playing-bar > footer > div.main-nowPlayingBar-nowPlayingBar > div.main-nowPlayingBar-left > div > div.main-nowPlayingWidget-trackInfo.main-trackInfo-container > div.main-trackInfo-name > div > span > span > div > span"
         );
       }
       // If the song has a title.
@@ -854,7 +887,7 @@ async function update() {
 
         let ratingTitle =
           rating[7][Number(album_disc_number) - 1].split("&")[
-            Number(album_track_number) - 1
+          Number(album_track_number) - 1
           ];
         songRating.title = ratingTitle;
 
